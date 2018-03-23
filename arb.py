@@ -9,6 +9,7 @@ import configparser
 import exchanges.ex_hitbtc
 import exchanges.ex_binance
 import tools
+import loggers
 
 inifile = configparser.ConfigParser()
 inifile.read('./config.ini', 'UTF-8')
