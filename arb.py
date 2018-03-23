@@ -25,7 +25,16 @@ threshold_up = float(inifile.get('settings', "threshold_up"))
 threshold_down = float(inifile.get('settings', "threshold_down"))
 SLACK_FLAG = int(inifile.get('SLACK', "FLAG"))
 SLACK_URL = inifile.get('SLACK', "URL")
+FILE_LOG = int(inifile.get('FILE_LOGGING', "FLAG"))
+FILE_NAME = inifile.get('FILE_LOGGING', "NAME")
 
+# ロガーのセットアップ
+l = [loggers.console_logger]
+if SLACK_FLAG == 1:
+    l.append(loggers.slack_logger(SLACK_URL))
+if FILE_LOG == 1:
+    l.append(loggers.file_logger(FILE_NAME))
+    
 print(CRYPTO_BASE + "/" + CRYPTO_ALT)
 
 # 取引所1, 取引所2のclass
@@ -34,7 +43,7 @@ t2 = exchanges.ex_binance.client(BINA_APIKEY, BINA_SECKEY, CRYPTO_BASE, CRYPTO_A
 
 # まとめたclass
 # インスタンス作成時にticksizeを出力
-ex = tools.exchange(t1, t2, SLACK_FLAG, SLACK_URL, BINA_BNBBUY)
+ex = tools.exchange(t1, t2, l, BINA_BNBBUY)
 
 # API が正常に働いてるかチェック
 ex.check_api_state()
