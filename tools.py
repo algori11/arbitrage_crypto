@@ -5,13 +5,12 @@ import time
 
 class exchange(object):
     
-    def __init__(self, exchange1, exchange2, slack_flag=False, slack_url=False, bnbbuy=False):
+    def __init__(self, exchange1, exchange2, logger, bnbbuy=False):
         self.t1 = exchange1
         self.t2 = exchange2
         self.dscrsize = max(self.t1.tsize(), self.t2.tsize())
         self.bnbbuy = bnbbuy
-        self.slack_flag = slack_flag
-        self.slack_url = slack_url
+        self.logger = logger
         
         print("ticksize:"+str(self.dscrsize))
     
@@ -78,21 +77,7 @@ class exchange(object):
 
     # メッセージの表示（SNSに投稿）
     def msgprint(self, msg):
-
-        print(msg)
-
-        if self.slack_flag == 1:
-            sflag = 0
-            while sflag == 0:
-                try:
-                    requests.post(self.slack_url, data=json.dumps({'text': msg}), timeout=2)
-                    sflag = 1
-                except Exception as e:
-                    print(e, 'SLACK post error')
-                    time.sleep(1)
-        else:
-            pass
-        
+        self.logger.log(msg)
         
     # 注文が通らなかったときのエラーメッセージを表示（それぞれの取引所のエラー時のレスポンスを利用）
     def errormsg(self, input_order):
