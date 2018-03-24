@@ -5,12 +5,12 @@ import time
 
 class exchange(object):
     
-    def __init__(self, exchange1, exchange2, loggers, bnbbuy=False):
+    def __init__(self, exchange1, exchange2, logger, bnbbuy=False):
         self.t1 = exchange1
         self.t2 = exchange2
         self.dscrsize = max(self.t1.tsize(), self.t2.tsize())
         self.bnbbuy = bnbbuy
-        self.loggers = loggers
+        self.logger = logger
         
         print("ticksize:"+str(self.dscrsize))
     
@@ -77,8 +77,7 @@ class exchange(object):
 
     # メッセージの表示（SNSに投稿）
     def msgprint(self, msg):
-        for logger in self.loggers:
-            logger.log(msg)        
+        self.logger.log(msg)
         
     # 注文が通らなかったときのエラーメッセージを表示（それぞれの取引所のエラー時のレスポンスを利用）
     def errormsg(self, input_order):

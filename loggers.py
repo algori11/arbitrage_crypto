@@ -3,8 +3,31 @@ import requests
 import json
 import threading
 
+class aggregator:
+    def __init__(self, l):
+        if isinstance(l, list):
+            self.lagg = l
+        else:
+            self.lagg = [l]
+
+    def append(self, l):
+        if isinstance(l, list):
+            self.lagg += l
+        else:
+            self.lagg.append(l)
+    
+    def log(self, msg):
+        for logger in self.lagg:
+            logger.log(msg)
+
+    def shutdown(self):
+        for logger in self.lagg:
+            if callable(getattr(logger, 'shutdown', None)):
+                logger.shutdown()
+
+
 class console_logger:
-    def log(msg):
+    def log(self, msg):
         print(msg)
 
 class file_logger:
@@ -46,18 +69,19 @@ class slack_logger:
 
     def target(self):
         while not self.shutdown_event.is_set():
-            while not self.resume_event.is_set():
-                time.sleep(1)
+            self.resume_event.wait()
             self.resume_event.clear()
             if len(self.messages) > 0:
-                with self.writer_lock:
-                    while len(self.messages) > 0:
-                        self.slack_post(self.messages.pop(0))
+                while len(self.messages) > 0:
+                    message = self.messages[0]
+                    with self.writer_lock:
+                        self.messages.pop(0)
+                    self.slack_post(message)
     
     def shutdown(self):
         with self.writer_lock:
             self.messages = []
 
-        self.resume_event.set()
         self.shutdown_event.set()
+        self.resume_event.set()
         self.thread.join()
