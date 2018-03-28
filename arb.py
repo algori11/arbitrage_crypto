@@ -26,7 +26,7 @@ from docopt import docopt
 
 args = docopt(__doc__)
 
-if (args['--config'] is not None):
+if (args['--config']):
     config.read(args['--config'][0])
 else:
     config.read('./config.ini')
