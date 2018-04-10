@@ -37,7 +37,7 @@ python3で開発しています.（たぶんpython2でも動きます）.<br><br
 
 というようなテキストが出力されます.<br><br>
 
-##### Trade mode
+### Trade mode
 Trade modeでは,<br>
 > authentication success # APIは正しく認証されているか確認<br>
 
@@ -69,7 +69,7 @@ Trade modeでは,<br>
 
 特殊なエラーの例としては, Biboxという取引所ではそれぞれの仮想通貨について, balanceを一度0でない状態にして口座をactivateしないと残高が取得できない, といった仕様がありました. (この場合, アービトラージに用いる通貨を事前に手で少しだけ購入しておけばOKです.)<br><br>
 
-##### Demo mode
+### Demo mode
 Demo modeでは, <br>
 > Demo mode start <br>
 
