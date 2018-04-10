@@ -85,3 +85,21 @@ class slack_logger:
         self.shutdown_event.set()
         self.resume_event.set()
         self.thread.join()
+
+class line_logger:
+    def __init__(self, token):
+        self.line_headers = {'Authorization': 'Bearer ' + token}
+
+    def log(self, msg):
+        self.line_post(msg)
+
+    def line_post(self, msg):
+        retry_count = 5
+        while retry_count > 0:
+            try:
+                requests.post('https://notify-api.line.me/api/notify', data={'message': msg}, headers=self.line_headers, timeout=2)
+                retry_count = 0
+            except Exception as e:
+                print(e, 'LINE post error')
+                retry_count -= 1
+                time.sleep(2)
