@@ -16,7 +16,7 @@ python3で開発しています.（たぶんpython2でも動きます）.<br><br
 * docopt（コマンドライン引数処理）<br>
 * ccxt（仮想通貨取引所のAPIをまとめたライブラリ）<br>
 
-を用いているので, pipでinstallしてください.<br>
+を用いているので, pipでinstallしてください.<br><br>
 
 ### コードの実行
 後述のconfig.iniを記入して, 各取引所に同額程度の基軸通貨とペアにした通貨を入金し, <br>
@@ -35,7 +35,7 @@ python3で開発しています.（たぶんpython2でも動きます）.<br><br
 > binance/hitbtc2 # アービトラージに用いる取引所はどこか<br>
 > minsize:0.001 # 取引の最小値はいくらか<br>
 
-というようなテキストが出力されます.<br>
+というようなテキストが出力されます.<br><br>
 
 ##### Trade mode
 Trade modeでは,<br>
@@ -60,7 +60,7 @@ Trade modeでは,<br>
 * [0.103529, 1.4060] ：[基軸通貨, ペアにした通貨]の残高（両取引所の合計）<br>
 * ch:-1.0670 ：取引した量（取引所1で売って2で買う場合 ＋, 取引所2で売って1で買う場合 -の符号がつく）<br>
 * BNB:1.1108 ：取引手数料に使う取引所トークンの残高（optional, 後述のBNBBUYフラグをONにした場合）<br>
-を表しています.<br>
+を表しています.<br><br>
 
 ##### ここまででエラーが出た場合
 > authentication success
@@ -76,10 +76,11 @@ Demo modeでは, <br>
 のメッセージの後, 裁定機会が観測されるたび, 仮にその機会に取引できたときの利益を表示します.<br>
 表示する内容は, 左から, 時間, 取引できる量（取引所1で売って2で買う場合 ＋, 取引所2で売って1で買う場合 -の符号がつく）, 取引を行ったときの倍率, となっています（倍率については, best bid / ask を使っているため, 評価は甘め.）<br>
 
-本番を実行する前にその取引所/通貨ペアにどの程度の鞘があるか見積もるのに使ってください.<br>
+本番を実行する前にその取引所/通貨ペアにどの程度の鞘があるか見積もるのに使ってください.<br><br>
 
 ### config.ini の構成と見方
-configファイルに, 取引する通貨の組み合わせや取引所, 取引を行う価格差の条件などを記入します.<br>
+configファイルに, 取引する通貨の組み合わせや取引所, 取引を行う価格差の条件などを記入します.<br><br>
+
 ##### [setting]
 > [settings]<br>
 > BASE = BTC<br>
@@ -94,7 +95,7 @@ threshold_up = 1.003 と指定すると「取引所1の方が取引所2より1.0
 threshold_down = 1.004 と指定すると「取引所2の方が取引所1より1.004倍以上高くなったら, 取引所2で売って取引所1で売る」ように設定したことになります.<br>
 
 ここで, up と down を別々に設定するのは, 取引所ごとに高くなりやすい傾向や安くなりやすい傾向がある場合があるからです.<br>
-手数料以下の値を設定しても損するだけなので, 基本的には手数料の倍率より高いものを指定することをおすすめします.<br>
+手数料以下の値を設定しても損するだけなので, 基本的には手数料の倍率より高いものを指定することをおすすめします.<br><br>
 
 ##### [TOKENS]
 > BNBBUY = 1<br>
@@ -103,7 +104,7 @@ threshold_down = 1.004 と指定すると「取引所2の方が取引所1より1
 Binanceという取引所では, BNBという取引所の独自トークンで手数料を支払うと手数料が割引される（半額になる）ため, このトークンを自動的に購入する機能を実装しています.<br>
 BNBBUYを1にすると, 所持BNBが1BNB以下になったとき1BNBの自動購入が行われます. Binanceを用いない場合, またBinanceでBNBを自動購入しない場合はBNBBUY=0を指定してください. BiboxでのBIXについても同様にしています.<br>
 
-Binanceを使用しないのにBNBBUY = 1を指定したり, Biboxを使用しないのにBIXBUY = 1を指定するとアルゴリズムが止まるので注意してください.<br>
+Binanceを使用しないのにBNBBUY = 1を指定したり, Biboxを使用しないのにBIXBUY = 1を指定するとアルゴリズムが止まるので注意してください.<br><br>
 
 ##### [EXCHANGE1]と[EXCHANGE2]
 > [EXCHANGE1]
@@ -123,7 +124,7 @@ Binanceを使用しないのにBNBBUY = 1を指定したり, Biboxを使用し�
 > _1broker, _1btcxe, acx, allcoin, anxpro, bibox, binance, bit2c, bitbay, bitcoincoid, bitfinex, bitfinex2, bitflyer, bithumb, bitlish, bitmarket, bitmex, bitso, bitstamp, bitstamp1, bittrex, bitz, bl3p, bleutrade, braziliex, btcbox, btcchina, btcexchange, btcmarkets, btctradeim, btctradeua, btcturk, btcx, bxinth, ccex, cex, chbtc, chilebit, cobinhood, coincheck, coinegg, coinexchange, coinfloor, coingi, coinmarketcap, coinmate, coinsecure, coinspot, coolcoin, cryptopia, dsx, exmo, flowbtc, foxbit, fybse, fybsg, gatecoin, gateio, gdax, gemini, getbtc, hitbtc, hitbtc2, huobi, huobicny, huobipro, independentreserve, itbit, jubi, kraken, kucoin, kuna, lakebtc, liqui, livecoin, luno, lykke, mercado, mixcoins, nova, okcoincny, okcoinusd, okex, paymium, poloniex, qryptos, quadrigacx, quoinex, southxchange, surbitcoin, therock, tidex, urdubit, vaultoro, vbtc, virwox, wex, xbtce, yobit, yunbi, zaif, zb<br>
 
 の中にある文字列からを指定してください. 大手の取引所は大抵この中にあるかと思います.<br>
-（HitBTCを用いる場合, バージョンアップしたAPIであるhitbtc2を指定するようにしてください.）<br>
+（HitBTCを用いる場合, バージョンアップしたAPIであるhitbtc2を指定するようにしてください.）<br><br>
 
 ##### ログ機能
 configの[SLACK][LINE][FILE_LOGGING]のそれぞれのFLAGを1にしてURLやトークン、ファイル名を入力することで, <br>
@@ -131,14 +132,14 @@ configの[SLACK][LINE][FILE_LOGGING]のそれぞれのFLAGを1にしてURLやト
 * [LINE] LINE Notify に投稿<br>
 * [FILE_LOGGING] 指定したファイル名のファイルに保存<br>
 
-という形でログを出力することができます.<br>
+という形でログを出力することができます.<br><br>
 
 ### 各取引所への適応
 ccxtは完全には整備されていないところがあり, このアルゴリズムもそれぞれの取引所に完全に適応しているわけではないので, 選んだ取引所に応じて様々なエラーが発生すると予想されます. とりあえずBinanceとHitBTCでは正常動作することを確認しています. また, BiboxとZaifについては残高取得ができるところまでは確認しています.<br>
 
 Bit-zはAPIが変わる前はうまく動いていたのですが, 変更後何の仕様がかわったのかまともなレスポンスが帰ってきていません（2018/04/10現在）. 大手で手数料も安いですし, 原因がわかったら教えてくださると助かります.<br>
 
-ほか, こんなエラーが出たよ、という報告や, その対策など投げていただけると嬉しく思います.
+ほか, こんなエラーが出たよ、という報告や, その対策など投げていただけると嬉しく思います.<br><br>
 
 ### アドレス
 
