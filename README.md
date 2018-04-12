@@ -2,8 +2,8 @@
 仮想通貨のアービトラージアルゴリズム
 
 ### 概要
-こちらに紹介していたものです.<br>
-http://algorisamurai.hateblo.jp/entry/2018/03/09/172019<br>
+こちらに紹介しているものです.<br>
+[pythonで仮想通貨の取引所間アービトラージ](http://algorisamurai.hateblo.jp/entry/2018/03/09/172019)<br>
 （ブログから来た人は, このマニュアルの方が最新版なのでこの記事に従ってください.）<br>
 
 仮想通貨取引所を二つ用意して入金し, アルゴリズムを走らせることで, 二つの取引所に価格差が生じた機会を自動的に見つけて取引し, 利益を生み出します. 現物取引のみに対応しています.<br>
@@ -124,6 +124,9 @@ Binanceを使用しないのにBNBBUY = 1を指定したり, Biboxを使用し�
 > _1broker, _1btcxe, acx, allcoin, anxpro, bibox, binance, bit2c, bitbay, bitcoincoid, bitfinex, bitfinex2, bitflyer, bithumb, bitlish, bitmarket, bitmex, bitso, bitstamp, bitstamp1, bittrex, bitz, bl3p, bleutrade, braziliex, btcbox, btcchina, btcexchange, btcmarkets, btctradeim, btctradeua, btcturk, btcx, bxinth, ccex, cex, chbtc, chilebit, cobinhood, coincheck, coinegg, coinexchange, coinfloor, coingi, coinmarketcap, coinmate, coinsecure, coinspot, coolcoin, cryptopia, dsx, exmo, flowbtc, foxbit, fybse, fybsg, gatecoin, gateio, gdax, gemini, getbtc, hitbtc, hitbtc2, huobi, huobicny, huobipro, independentreserve, itbit, jubi, kraken, kucoin, kuna, lakebtc, liqui, livecoin, luno, lykke, mercado, mixcoins, nova, okcoincny, okcoinusd, okex, paymium, poloniex, qryptos, quadrigacx, quoinex, southxchange, surbitcoin, therock, tidex, urdubit, vaultoro, vbtc, virwox, wex, xbtce, yobit, yunbi, zaif, zb<br>
 
 の中にある文字列からを指定してください. 大手の取引所は大抵この中にあるかと思います.<br>
+
+手数料が安い取引所については以下の記事を参考にしてください.<br>
+[アービトラージに適した仮想通貨取引所（取引手数料0.1%以下）](http://algorisamurai.hateblo.jp/entry/2018/04/12/151313)<br>
 （HitBTCを用いる場合, バージョンアップしたAPIであるhitbtc2を指定するようにしてください.）<br><br>
 
 ##### ログ機能
