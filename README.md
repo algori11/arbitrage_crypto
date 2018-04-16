@@ -4,7 +4,6 @@
 ### 概要
 こちらに紹介しているものです.<br>
 [pythonで仮想通貨の取引所間アービトラージ](http://algorisamurai.hateblo.jp/entry/2018/03/09/172019)<br>
-[アービトラージに適した仮想通貨取引所（取引手数料0.1%以下）](http://algorisamurai.hateblo.jp/entry/2018/04/12/151313)<br>
 （ブログの記述と食い違う場合、このREADMEが最新版なのでこちらを参照してください.）<br>
 
 仮想通貨取引所を二つ用意して入金し, アルゴリズムを走らせることで, 二つの取引所に価格差が生じた機会を自動的に見つけて取引し, 利益を生み出します. 現物取引のみに対応しています.<br>
@@ -99,6 +98,7 @@ threshold_down = 1.004 と指定すると「取引所2の方が取引所1より1
 手数料以下の値を設定しても損するだけなので, 基本的には手数料の倍率より高いものを指定することをおすすめします.<br><br>
 
 ##### [TOKENS]
+> [TOKENS]<br>
 > BNBBUY = 1<br>
 > BIXBUY = 0<br>
 
@@ -108,15 +108,15 @@ BNBBUYを1にすると, 所持BNBが1BNB以下になったとき1BNBの自動購
 Binanceを使用しないのにBNBBUY = 1を指定したり, Biboxを使用しないのにBIXBUY = 1を指定するとアルゴリズムが止まるので注意してください.<br><br>
 
 ##### [EXCHANGE1]と[EXCHANGE2]
-> [EXCHANGE1]
-> NAME = binance
-> APIKEY = dummy_foobarfoobarfoobarfoobarfoobarfoobarfoobarfoobarfoobar
-> SECRET = dummy_abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz
+> [EXCHANGE1]<br>
+> NAME = binance<br>
+> APIKEY = dummy_foobarfoobarfoobarfoobarfoobarfoobarfoobarfoobarfoobar<br>
+> SECRET = dummy_abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz<br>
 
-> [EXCHANGE2]
-> NAME = hitbtc2
-> APIKEY = dummy_foobarfoobarfoobarfoobarfoo
-> SECRET = dummy_abcdefghijklmnopqrstuvwxyz
+> [EXCHANGE2]<br>
+> NAME = hitbtc2<br>
+> APIKEY = dummy_foobarfoobarfoobarfoobarfoo<br>
+> SECRET = dummy_abcdefghijklmnopqrstuvwxyz<br>
 
 取引に用いる取引所を指定します. また, このプログラムで取引所にアクセスできるように, APIキーとSECRETキーを各取引所のWebサイトで取得し, ここに記入します. APIキーの取得時, 情報閲覧の許可やTradeの許可を設定するのを忘れないようにしてください. このとき, セキュリティ上, APIからはWithdrawalできないよう設定することをお勧めします.
 
