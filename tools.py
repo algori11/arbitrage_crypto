@@ -40,8 +40,10 @@ class exchange(object):
         if bnbbuy == 1:
             if self.t1.name == "binance":
                 self.tbinance = self.t1
+                self.t1.options["adjustForTimeDifference"] = True
             elif self.t2.name == "binance":
                 self.tbinance = self.t2
+                self.t2.options["adjustForTimeDifference"] = True
             else:
                 print("binance is not selected")
                 raise
