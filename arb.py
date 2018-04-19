@@ -109,7 +109,7 @@ try:
 
             # up時の処理
             if tradeflag == 1:
-                trade_val = min(val_up*0.95, tradable_value)
+                trade_val = min(val_up*0.8, tradable_value)
                 if trade_val >= ex.minsize:
                     ex.order_up(trade_val, chrate_up, int(t2_alt < t1_base/t1_ask), t1_bid*0.995, t2_ask*1.005)
                     reportflag = 1
