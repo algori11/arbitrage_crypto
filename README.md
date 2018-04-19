@@ -130,7 +130,7 @@ Binanceを使用しないのにBNBBUY = 1を指定したり, Biboxを使用し�
 [アービトラージに適した仮想通貨取引所（取引手数料0.1%以下）](http://algorisamurai.hateblo.jp/entry/2018/04/12/151313)<br>
 （HitBTCを用いる場合, バージョンアップしたAPIであるhitbtc2を指定するようにしてください.）<br><br>
 
-##### ログ機能
+### ログ機能
 configの[SLACK][LINE][FILE_LOGGING]のそれぞれのFLAGを1にしてURLやトークン、ファイル名を入力することで, <br>
 * [SLACK] SLACKの Incoming Webhooks に投稿<br>
 * [LINE] LINE Notify に投稿<br>
@@ -142,6 +142,10 @@ configの[SLACK][LINE][FILE_LOGGING]のそれぞれのFLAGを1にしてURLやト
 ccxtは完全には整備されていないところがあり, このアルゴリズムもそれぞれの取引所に完全に適応しているわけではないので, 選んだ取引所に応じて様々なエラーが発生すると予想されます. とりあえずBinanceとHitBTCでは正常動作することを確認しています. また, Bit-zとBibox, Zaifについては残高取得ができるところまでは確認しています.<br>
 
 ほか, こんなエラーが出たよ, という報告や, その対策など投げていただけると嬉しく思います.<br><br>
+
+### Triangular Arbitrage
+実験段階ですが, 三点アービトラージ（同じ取引所内で三通貨をぐるぐる交換して利益を出すやつ）の機会を検出するコードを/tri_arb以下に置いています。簡単な解説をブログに書いています.  
+[pythonで三点アービトラージ](http://algorisamurai.hateblo.jp/entry/2018/04/19/200307)<br>
 
 ### アドレス
 
