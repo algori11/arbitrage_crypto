@@ -2,7 +2,8 @@ import time
 import json
 import numpy as np
 import requests
-
+import queue
+import threading
 import loggers_tri
 import config_tri
 import ccxt
@@ -33,6 +34,7 @@ print("exchange: {}".format(t1.name))
 print("crypto: {} {} {}".format(BASE1, BASE2, ALT))
 print("threshold: {}".format(threshold))
 
+query_list = [PAIR1, PAIR2, PAIR3]
 
 
 # 取引最小値（limit1のみBASE2換算, limit2とlimit3はALT換算）を取得
@@ -49,9 +51,28 @@ def get_orderbooks(maxtime):
     while sflag == 0:
         try:
             start = time.time()
-            book1 = t1.fetch_order_book(PAIR1, limit=10)
-            book2 = t1.fetch_order_book(PAIR2, limit=10)
-            book3 = t1.fetch_order_book(PAIR3, limit=10)
+            
+            response = {}
+            
+            def query_worker(query_queue):
+                query = query_queue.get()
+                response[query]=t1.fetch_order_book(query, limit=10)
+                query_queue.task_done()
+
+            # queueを設定
+            query_queue = queue.Queue()
+            for q in query_list:
+                query_queue.put(q)
+
+            # Thread start
+            while not query_queue.empty():
+                w_thread = threading.Thread(target=query_worker, args=(query_queue,))
+                w_thread.start()
+            query_queue.join()
+            
+            book1 = response[PAIR1]
+            book2 = response[PAIR2]
+            book3 = response[PAIR3]
             interval = time.time()-start
             if interval < maxtime:
                 sflag = 1
