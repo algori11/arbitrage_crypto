@@ -51,6 +51,10 @@ try:
     t1.name = config.NAME1
     t2.name = config.NAME2
     
+    # timeoutの時間を10秒から1秒(1000ms)に変更
+    t1.timeout = 1000
+    t2.timeout = 1000
+    
     # まとめたclass
     # インスタンス作成時にticksizeを出力
     ex = tools.exchange(t1, t2, config.CRYPTO_BASE, config.CRYPTO_ALT, l, config.BNBBUY, config.BIXBUY)
