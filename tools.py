@@ -103,7 +103,7 @@ class exchange(object):
             try:
                 bal = self.tbinance.fetch_balance()
                 sflag = 1
-            except (ccxt.NetworkError, ccxt.base.errors.RequestTimeout):
+            except (ccxt.NetworkError):
                 time.sleep(1)
             except:
                 self.logger.log(str(sys.exc_info()[0]))
@@ -117,7 +117,7 @@ class exchange(object):
             try:
                 bal = self.tbibox.fetch_balance()
                 sflag = 1
-            except (ccxt.NetworkError, ccxt.base.errors.RequestTimeout):
+            except (ccxt.NetworkError):
                 time.sleep(1)
             except:
                 self.logger.log(str(sys.exc_info()[0]))
@@ -145,7 +145,7 @@ class exchange(object):
                     self.tbibox_bix = self.bixcheck()
 
                 sflag = 1
-            except (ccxt.NetworkError, ccxt.base.errors.RequestTimeout):
+            except (ccxt.NetworkError):
                 time.sleep(1)
             except:
                 self.logger.log(str(sys.exc_info()[0]))
@@ -277,7 +277,7 @@ tradeflag*ch_val))
                 if tradeflag == -1:
                     tradable_value = ratelist_down[d_idx -1][1]
                 sflag = 1
-            except (ccxt.NetworkError, ccxt.base.errors.RequestTimeout):
+            except (ccxt.NetworkError):
                 time.sleep(1)
             except:
                 self.logger.log(str(time.asctime()[4:-5]) + str(sys.exc_info()[0]))
