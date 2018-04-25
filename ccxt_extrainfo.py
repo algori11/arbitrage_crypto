@@ -3,18 +3,9 @@
 class info:
     def minqty(self):
         minqdict = {}
-        minqdict["bitz"] = {"DASH/BTC": 0.01}
-        minqdict["bitz"] = {"EOS/BTC": 1.0}
-        minqdict["bitz"] = {"TRX/BTC": 2050}
-        minqdict["bitz"] = {"ETH/BTC": 0.05}
-        minqdict["bitz"] = {"LTC/BTC": 0.1}
-        minqdict["bitz"] = {"EKT/BTC": 100}
-        minqdict["bitz"] = {"ETC/BTC": 0.5}
-        minqdict["bitz"] = {"LSK/BTC": 0.2}
-        minqdict["bitz"] = {"NULS/BTC": 10}
-        minqdict["bitz"] = {"ZEC/BTC": 0.05}
-        minqdict["bitz"] = {"MCO/BTC": 0.05}
-        minqdict["bitz"] = {"QTUM/BTC": 0.01}
-        minqdict["bitz"] = {"TRX/BTC": 2050}
+        minqdict["bitz"] = {
+        "DASH/BTC": 0.01, "EOS/BTC": 1.0, "TRX/BTC": 2050, "ETH/BTC": 0.05,
+        "LTC/BTC": 0.1, "EKT/BTC": 100, "ETC/BTC": 0.5, "LSK/BTC": 0.2, "NULS/BTC": 10,
+        "ZEC/BTC": 0.05, "MCO/BTC": 0.05, "QTUM/BTC": 0.01, "TRX/BTC": 2050}
         
         return minqdict
