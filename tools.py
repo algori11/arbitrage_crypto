@@ -269,6 +269,10 @@ tradeflag*ch_val))
                 d_idx = np.sum(ratelist_down[:, 0] >= thrd_down)
 
                 tradeflag = np.sign(u_idx) - np.sign(d_idx)
+		
+		# 異常なask/bid (ask < bid の場合) を弾く
+		if (depth1["asks"][0][0] < depth1["bids"][0][0]) or (depth2["asks"][0][0] < depth2["bids"][0][0]):
+                    tradeflag = 0
 
                 if tradeflag == 0:
                     tradable_value = 0
