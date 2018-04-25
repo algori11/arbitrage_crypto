@@ -3,7 +3,7 @@
 class info:
     def minqty(self):
         minqdict = {}
-        minqdict["bitz"] = {"DASH/BTC": 0.005}
+        minqdict["bitz"] = {"DASH/BTC": 0.01}
         minqdict["bitz"] = {"EOS/BTC": 1.0}
         minqdict["bitz"] = {"TRX/BTC": 2050}
         minqdict["bitz"] = {"ETH/BTC": 0.05}
