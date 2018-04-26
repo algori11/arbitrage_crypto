@@ -20,6 +20,7 @@ import tools
 import loggers
 import config
 import ccxt
+import buffer
 from docopt import docopt
 
 args = docopt(__doc__)
@@ -51,13 +52,20 @@ try:
     t1.name = config.NAME1
     t2.name = config.NAME2
     
-#     # timeoutの時間を10秒から1秒(1000ms)に変更
-#     t1.timeout = 1000
-#     t2.timeout = 1000
+    # 取引所インスタンスの修飾
+    t1 = buffer.buffer(t1, config.PASSWORDS)
+    t2 = buffer.buffer(t2, config.PASSWORDS)
     
-    # まとめたclass
+    # timeoutの時間を2秒に変更
+    t1.timeout = 2000
+    t2.timeout = 2000
+    
+    # まとめたclassを作成
     # インスタンス作成時にticksizeを出力
     ex = tools.exchange(t1, t2, config.CRYPTO_BASE, config.CRYPTO_ALT, l, config.BNBBUY, config.BIXBUY)
+
+    # API が正常に働いてるかチェック（authentication success）
+    ex.check_api_state()
 
     # 閾値の設定
     thrd_up = config.threshold_up
@@ -70,9 +78,12 @@ try:
     trade_val = 0.
     cnt = 0
     tradeflag, tradable_value, t1_ask, t2_ask, t1_bid, t2_bid = ex.rate_c(thrd_up, thrd_down)
+    
+    #桁合わせ(detail出力, デバッグ用)
+    amp = 10**(-np.floor(np.log10(t1_ask)))
 
     if (demoflag):
-        print("Demo mode start")
+
         while True:
 
             # 板監視
@@ -81,18 +92,16 @@ try:
             # up時の処理(t1のほうが高い場合)
             if tradeflag == 1:
 
-                ex.logger.log("{} {} ratio:{:.4f}".format(time.asctime()[4:-5], tradable_value, t1_bid/t2_ask))
+                ex.logger.log(time.asctime()[4:-5], 1, tradable_value, "{:.8f}".format(tradable_value*chrate_up*t1_ask))
             
             # down時の処理(t2のほうが高い場合)
             if tradeflag == -1:
-                ex.logger.log("{} {} ratio:{:.4f}".format(time.asctime()[4:-5], -tradable_value, t2_bid/t1_ask))
+                ex.logger.log(time.asctime()[4:-5], -1, tradable_value, "{:.8f}".format(tradable_value*chrate_down*t2_ask))
             
             # 休む（アクセス規制回避）
             time.sleep(3)
     else:
         # アービトラージ
-        # API が正常に働いてるかチェック（authentication success）
-        ex.check_api_state()
         
         while True:
             
@@ -100,6 +109,8 @@ try:
             if reportflag == 1:
                 t1_base, t1_alt, t2_base, t2_alt = np.array(ex.balances())
                 ex.status(t1_base, t1_alt, t2_base, t2_alt, trade_val, tradeflag)
+                # detailの出力（取引したときのbest bid/arbを表示（取引所のサイトの約定価格と比較して、うまく稼働してるかをチェックできます））
+                # ex.status_detail(t1_base, t1_alt, t2_base, t2_alt, trade_val, tradeflag, amp*t1_ask, amp*t2_ask, amp*t1_bid, amp*t2_bid)
                 reportflag = 0
             
             # 板監視
@@ -115,7 +126,7 @@ try:
             if tradeflag == 1:
                 trade_val = min(val_up*0.8, tradable_value)
                 if trade_val >= ex.minsize:
-                    ex.order_up(trade_val, chrate_up, int(t2_alt < t1_base/t1_ask), t1_bid*0.995, t2_ask*1.005)
+                    ex.order_up(trade_val, chrate_up, int(t2_alt < t1_base/t1_ask), t1_bid*0.99, t2_ask*1.01)
                     reportflag = 1
                 else:
                     reportflag = 0
@@ -124,7 +135,7 @@ try:
             if tradeflag == -1:
                 trade_val = min(val_down*0.8, tradable_value)
                 if trade_val >= ex.minsize:
-                    ex.order_down(trade_val, chrate_down, int(t1_alt < t2_base/t2_ask), t2_bid*0.995, t1_ask*1.005)
+                    ex.order_down(trade_val, chrate_down, int(t1_alt < t2_base/t2_ask), t2_bid*0.99, t1_ask*1.01)
                     reportflag = 1
                 else:
                     reportflag = 0
@@ -134,8 +145,14 @@ try:
             
             # 何もないときもたまにbalance更新
             cnt += 1
-            if cnt ==10 :
-                t1_base, t1_alt, t2_base, t2_alt = np.array(ex.balances()) 
-                cnt = 0
+            if cnt%10 == 0:
+                new_t1_base, new_t1_alt, new_t2_base, new_t2_alt = np.array(ex.balances())
+                if new_t1_base != t1_base or new_t2_base != t2_base or new_t1_alt != t1_alt or new_t2_alt != t2_alt:
+                    reportflag = 1
+                else:
+                    reportflag = 0
+
+
+
 finally:
     l.shutdown()

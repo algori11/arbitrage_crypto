@@ -4,6 +4,7 @@ def read(filename):
     global CRYPTO_BASE, CRYPTO_ALT
     global NAME1, APIKEY1, SECKEY1
     global NAME2, APIKEY2, SECKEY2
+    global PASSWORDS
     global threshold_up, threshold_down
     global SLACK_FLAG, SLACK_URL    
     global LINE_FLAG, LINE_TOKEN
@@ -19,10 +20,20 @@ def read(filename):
     NAME1 = inifile.get('EXCHANGE1', "NAME")
     APIKEY1 = inifile.get('EXCHANGE1', "APIKEY")
     SECKEY1 = inifile.get('EXCHANGE1', "SECRET")
+    PASSWORDS = {}
+    try:
+        PASSWORDS[NAME1] = inifile.get('EXCHANGE1', "PASS")
+    except:
+        pass
 
     NAME2 = inifile.get('EXCHANGE2', "NAME")
     APIKEY2 = inifile.get('EXCHANGE2', "APIKEY")
     SECKEY2 = inifile.get('EXCHANGE2', "SECRET")
+    try:
+        PASSWORDS[NAME2] = inifile.get('EXCHANGE2', "PASS")
+    except Exception as e:
+        print(e)
+        pass
 
     threshold_up = float(inifile.get('settings', "threshold_up"))
     threshold_down = float(inifile.get('settings', "threshold_down"))

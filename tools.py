@@ -5,28 +5,46 @@ import numpy as np
 import time
 import ccxt
 import sys
+import queue
+import threading
+import socket
 import ccxt_extrainfo
 from pandas import DataFrame as df
+from ccxt.base.errors import RequestTimeout
 
 class exchange(object):
     
     def __init__(self, exchange1, exchange2, base, alt, logger, bnbbuy=False, bixbuy=False):
         self.t1 = exchange1
         self.t2 = exchange2
+        self.tquery = [self.t1, self.t2]
 
         self.base = base
         self.alt = alt
         self.symbol = alt + "/"  + base
         self.bnbbuy = bnbbuy
         self.bixbuy = bixbuy
-
+        
+        # 取引所の情報を取得（.marketをゲット）
+        self.t1.load_markets()
+        self.t2.load_markets()
+        
         self.minsize = max(self.minq(self.t1), self.minq(self.t2))
         if self.minsize == 0:
             print("error: No info about minimum order quantity")
             raise
         else:
             self.digits = max(int(-np.log10(self.minsize)), 0) + 1
-
+            
+        # market_buy/sellが可能なリスト（暫定, 可能ならここにccxtコードを追記）
+        self.market_order = ["binance", "hitbtc2"]
+        
+        # amountの量子化サイズを粗いほうで上書き
+        amount_precision = min(self.t1.markets[self.symbol]["precision"]["amount"], self.t2.markets[self.symbol]["precision"]["amount"])
+        self.t1.markets[self.symbol]["precision"]["amount"] = amount_precision
+        self.t2.markets[self.symbol]["precision"]["amount"] = amount_precision
+        
+        # 表示する桁数を決定
         self.display = "{} [{:.6f}, {:."+str(self.digits)+"f}] ch:{:."+str(self.digits)+"f}"
 
         self.logger = logger
@@ -40,14 +58,11 @@ class exchange(object):
         if bnbbuy == 1:
             if self.t1.name == "binance":
                 self.tbinance = self.t1
-                self.t1.options["adjustForTimeDifference"] = True
             elif self.t2.name == "binance":
                 self.tbinance = self.t2
-                self.t2.options["adjustForTimeDifference"] = True
             else:
                 print("binance is not selected")
                 raise
-
         if bixbuy == 1:
             if self.t1.name == "bibox":
                 self.tbibox = self.t1
@@ -57,10 +72,12 @@ class exchange(object):
                 print("bibox is not selected")
                 raise
 
-
+	
     
     # APIで認証できてるか調べる（認証できてたらbalanceを返す）
     def check_api_state(self):
+        self.t1.timeout=10000
+        self.t2.timeout=10000
         try:
             t1_base, t1_alt = self.balance(self.t1)
         except Exception as e:
@@ -71,64 +88,29 @@ class exchange(object):
         except Exception as e:
             print(self.t2.name, "API authentication error")
             raise
-        print("authentication success")
+        print("authentication success (balance)")
+        self.t1.timeout=2000
+        self.t2.timeout=2000
         return t1_base, t1_alt, t2_base, t2_alt
 
     # 取引最小単位を取得（＆通貨ペアが存在するかチェック）
     def minq(self, ts):
-        info = df(ts.fetch_markets())
         try:
-            minsize = info[info["symbol"]==self.symbol]["limits"][info[info["symbol"]==self.symbol].index[0]]["amount"]["min"]
+            minsize = ts.markets[self.symbol]["limits"]["amount"]["min"]
         except KeyError:
             try:
                 minsize = ccxt_extrainfo.info().minqty()[ts.name][self.symbol]
             except:
                 print("Caution: No information about minimum order quantity limit in " + ts.name)
-                print("→ check ccxt_extrainfo")
+                print("→ check ccxt_extrainfo or currency pair")
                 minsize = 0
-        except IndexError:
-            print("Error: No currency pair " + self.symbol + " in " + ts.name)
-            raise
-        return np.float(minsize)
 
+        return np.float(minsize)
+    
     # 残高取得のwrapper
     def balance(self, ts):
         bal = ts.fetch_balance()
         return np.float(bal["free"][self.base]), np.float(bal["free"][self.alt])
-    
-    # BNB/BIX残高取得
-    def balancebnb(self):
-        sflag = 0
-        while sflag == 0:
-            try:
-                bal = self.tbinance.fetch_balance()
-                sflag = 1
-            except (ccxt.NetworkError):
-                time.sleep(1)
-            except:
-                self.logger.log(str(sys.exc_info()[0]))
-                raise
-
-        return np.float(bal["free"]["BNB"])
-
-    def balancebix(self):
-        sflag = 0
-        while sflag == 0:
-            try:
-                bal = self.tbibox.fetch_balance()
-                sflag = 1
-            except (ccxt.NetworkError):
-                time.sleep(1)
-            except:
-                self.logger.log(str(sys.exc_info()[0]))
-                raise
-
-        return np.float(bal["free"]["BIX"])
-    
-    # orderbookのwrapper
-    def orderbook(self, ts):
-        book = ts.fetch_order_book(symbol=self.symbol, limit=20)
-        return {"asks": np.array(book["asks"][:20], dtype=np.float), "bids": np.array(book["bids"][:20], dtype=np.float)}
 
     # 両取引所の残高を取得
     def balances(self):
@@ -145,50 +127,168 @@ class exchange(object):
                     self.tbibox_bix = self.bixcheck()
 
                 sflag = 1
-            except (ccxt.NetworkError):
+            except (ccxt.NetworkError, RequestTimeout) as e:
                 time.sleep(1)
             except:
                 self.logger.log(str(sys.exc_info()[0]))
                 raise
 
         return t1_base, t1_alt, t2_base, t2_alt
-
+    
+    # 注文時だけtimeoutを長めにとる ＆ market_buy/sellできるか取引所かどうかで使う関数をスイッチ
+    # 売り注文
+    def sell_order(self, ts, amount, price_sell):
+        ts.timeout=10000
+        if ts.name in self.market_order:
+            order = ts.create_market_sell_order(self.symbol, amount)
+        else:
+            order = ts.create_limit_sell_order(self.symbol, amount, price_sell)
+        ts.timeout=2000
+        return order
+    
+    # 買い注文
+    def buy_order(self, ts, amount, price_buy):
+        ts.timeout=10000
+        if ts.name in self.market_order:
+            order = ts.create_market_buy_order(self.symbol, amount)
+        else:
+            order = ts.create_limit_buy_order(self.symbol, amount, price_buy)
+        ts.timeout=2000
+        return order
+    
+    # 売り注文と買い注文をペアにした関数
     # t2でペア通貨を買い、t1で売る
     def order_up(self, ch_val, chrate, bflag, price_sell, price_buy):
-        try:
-            if self.t1.name in ["binance", "hitbtc2"]:
-                order1 = self.t1.create_market_sell_order(self.symbol, ch_val)
-            else:
-                order1 = self.t1.create_limit_sell_order(self.symbol, ch_val, price_sell)
+        response = [[],[]]
+
+        def thread_worker(thread_queue):
+            thread = thread_queue.get()
+            try:
+                if thread == 0:
+                    response[thread] = self.sell_order(self.t1, ch_val, price_sell)
+                if thread == 1:
+                    response[thread] = self.buy_order(self.t2, ch_val*(1.+chrate*bflag), price_buy)
+            except (ccxt.NetworkError, RequestTimeout) as e:
+                print("NetworkError: ", str(sys.exc_info()[0]))
+                response[thread]=False
+            except Exception as e:
+                print("Unexpected order error: ", str(sys.exc_info()[0]))
+                response[thread]=False
+
+            thread_queue.task_done()
+
+        # queueを設定
+        thread_queue = queue.Queue()
+        for q in [0, 1]:
+            thread_queue.put(q)
+
+        # Thread start
+        while not thread_queue.empty():
+            w_thread = threading.Thread(target=thread_worker, args=(thread_queue,))
+            w_thread.start()
+            
+        # threadがおわって揃うのを待つ    
+        thread_queue.join()
         
-            if self.t2.name in ["binance", "hitbtc2"]:
-                order2 = self.t2.create_market_buy_order(self.symbol, ch_val*(1.+chrate*bflag))
-            else:
-                order2 = self.t2.create_limit_buy_order(self.symbol, ch_val*(1.+chrate*bflag), price_buy)
-        except:
+        # エラーを吐いたのがないかチェック
+        if response[0] == False or response[1] == False:
+            print("Order Error:", response)
             self.logger.log(str(sys.exc_info()[0]))
             raise
+
+        order1, order2 = response
+        return order1, order2
+
+
+
     
     # t2でペア通貨を売り、t1で買う
     def order_down(self, ch_val, chrate, bflag, price_sell, price_buy):
-        try:
-            if self.t1.name in ["binance", "hitbtc2"]:
-                order1 = self.t1.create_market_buy_order(self.symbol, ch_val*(1.+chrate*bflag))
-            else:
-                order1 = self.t1.create_limit_buy_order(self.symbol, ch_val*(1.+chrate*bflag), price_buy)
-            if self.t2.name in ["binance", "hitbtc2"]:
-                order2 = self.t2.create_market_sell_order(self.symbol, ch_val)
-            else:
-                order2 = self.t2.create_limit_sell_order(self.symbol, ch_val, price_sell)
-        except:
+        response = [[],[]]
+
+        def thread_worker(thread_queue):
+            thread = thread_queue.get()
+            try:
+                if thread == 0:
+                    response[thread] = self.buy_order(self.t1, ch_val*(1.+chrate*bflag), price_buy)
+                if thread == 1:
+                    response[thread] = self.sell_order(self.t2, ch_val, price_sell)
+            except (ccxt.NetworkError, RequestTimeout) as e:
+                print("NetworkError: ", str(sys.exc_info()[0]))
+                response[thread]=False
+            except Exception as e:
+                print("Unexpected order error: ", str(sys.exc_info()[0]))
+                response[thread]=False
+
+            thread_queue.task_done()
+
+        # queueを設定
+        thread_queue = queue.Queue()
+        for q in [0, 1]:
+            thread_queue.put(q)
+
+        # Thread start
+        while not thread_queue.empty():
+            w_thread = threading.Thread(target=thread_worker, args=(thread_queue,))
+            w_thread.start()
+            
+        # threadがおわって揃うのを待つ    
+        thread_queue.join()
+        
+        # エラーを吐いたのがないかチェック
+        if response[0] == False or response[1] == False:
+            print("Order Error:", response)
             self.logger.log(str(sys.exc_info()[0]))
             raise
 
+        order1, order2 = response
+        return order1, order2
+
+#     # 売り注文と買い注文をペアにした関数
+#     # t2でペア通貨を買い、t1で売る
+#     def order_up(self, ch_val, chrate, bflag, price_sell, price_buy):
+#         try:
+#             order1 = self.sell_order(self.t1, ch_val, price_sell)
+#             order2 = self.buy_order(self.t2, ch_val*(1.+chrate*bflag), price_buy)
+#         except:
+#             self.logger.log(str(sys.exc_info()[0]))
+#             raise
+#         return order1, order2 
+    
+#     # t2でペア通貨を売り、t1で買う
+#     def order_down(self, ch_val, chrate, bflag, price_sell, price_buy):
+#         try:
+#             order1 = self.buy_order(self.t1, ch_val*(1.+chrate*bflag), price_buy)
+#             order2 = self.sell_order(self.t2, ch_val, price_sell)
+#         except:
+#             self.logger.log(str(sys.exc_info()[0]))
+#             raise
+#         return order1, order2
+
     # 現在の状態を表示
     def status(self, t1_base, t1_alt, t2_base, t2_alt, ch_val, tradeflag):
-        self.msgprint(self.display.format(time.asctime()[4:-5], 
-t1_base+t2_base, t1_alt+t2_alt,
-tradeflag*ch_val))
+        msg = self.display.format(time.asctime()[4:-5],
+                                  t1_base+t2_base, t1_alt+t2_alt,
+                                  tradeflag*ch_val)
+        self.msgprint(msg)
+    
+    def status_detail(self, t1_base, t1_alt, t2_base, t2_alt, ch_val, tradeflag, t1_ask, t2_ask, t1_bid, t2_bid):
+        msg = self.display.format(time.asctime()[4:-5],
+                                  t1_base+t2_base, t1_alt+t2_alt,
+                                  tradeflag*ch_val)
+        if tradeflag == 0:
+            ask = t1_ask
+            bid = t1_bid
+        if tradeflag == 1:
+            ask = t2_ask
+            bid = t1_bid
+        if tradeflag == -1:
+            ask = t1_ask
+            bid = t2_bid
+
+        msg += " ask:{:.4f} bid:{:.4f}".format(ask, bid)
+        
+        self.msgprint(msg)
 
     # メッセージの表示（SNSに投稿）
     def msgprint(self, msg):
@@ -198,41 +298,56 @@ tradeflag*ch_val))
             msg = msg + " BIX:{:.4f}".format(self.tbibox_bix)
 
         self.logger.log(msg)
+     
+    # orderbookのwrapper
+    def orderbook(self, ts):
+        book = ts.fetch_order_book(symbol=self.symbol, limit=20)
+        return {"asks": np.array(book["asks"][:20], dtype=np.float), "bids": np.array(book["bids"][:20], dtype=np.float)}
     
-    # BNB/BIX（手数料用）が少なかったら買う
-    def bnbcheck(self, bnb_amount=1.):
-        b_bnb = self.balancebnb()
-        if b_bnb < bnb_amount:
-            orderb = self.tbinance.create_market_buy_order("BNB/BTC", bnb_amount)
-            self.logger.log("bought {}BNB".format(bnb_amount))
-            time.sleep(3)
-            b_bnb = self.balancebnb()
-        else:
-            pass
-        return b_bnb
-
-    def bixcheck(self, bix_amount=10.):
-        b_bix = self.balancebix()
-        if b_bix < bix_amount:
-            bixprice = self.tbibox.fetch_order_book("BIX/BTC")["asks"][10][0]
-            orderb = self.tbibox.create_limit_buy_order("BIX/BTC", bix_amount, bixprice)
-            self.logger.log("bought {}BIX".format(bix_amount))
-            time.sleep(3)
-            b_bix = self.balancebix()
-        else:
-            pass
-        return b_bix
-        
-        
+     
     # 板を監視して、指定した閾値以上での取引の可否と取引可能な量、そのときの通貨のask値を取得
-    # tradeflagが1だったらt2で買ってt1で売る取引(order_up)
-    # tradeflagが-1だったらt1で買ってt2で売る取引(order_down) がそれぞれ利益を出す
+    # 出力のtradeflagが1だったらt2で買ってt1で売る取引(order_up)
+    # 出力のtradeflagが-1だったらt1で買ってt2で売る取引(order_down) がそれぞれ利益を出す
     def rate_c(self, thrd_up, thrd_down):
         sflag = 0
         while sflag == 0:
             try:
-                depth1 = self.orderbook(self.t1)
-                depth2 = self.orderbook(self.t2)
+                response = {}
+
+                def query_worker(query_queue):
+                    query = query_queue.get()
+                    try:
+                        response[query.name]=self.orderbook(query)
+                    except (ccxt.NetworkError, RequestTimeout) as e:
+                        response[query.name]=0
+                    except Exception as e:
+                        print("unexpected get_orderbook error", str(sys.exc_info()[0]))
+                        response[query.name]=0
+
+                    query_queue.task_done()
+
+                # queueを設定
+                query_queue = queue.Queue()
+                for q in self.tquery:
+                    query_queue.put(q)
+
+                # Thread start
+                while not query_queue.empty():
+                    w_thread = threading.Thread(target=query_worker, args=(query_queue,))
+                    w_thread.start()
+                query_queue.join()
+
+                if response[self.t1.name] == 0 or response[self.t2.name] == 0:
+                    time.sleep(1)
+                    continue
+
+
+                depth1 = response[self.t1.name]
+                depth2 = response[self.t2.name]
+
+#                depth1 = self.orderbook(self.t1)
+#                depth2 = self.orderbook(self.t2)
+
                 n_depth = min(len(depth1["asks"]), len(depth2["asks"]), len(depth1["bids"]), len(depth2["bids"]))
                 cum_down1 = np.vstack([np.cumsum(depth1["asks"][:, 1][:n_depth]), np.zeros(n_depth)])
                 cum_down2 = np.vstack([np.cumsum(depth2["bids"][:, 1][:n_depth]), np.ones(n_depth)])
@@ -269,11 +384,14 @@ tradeflag*ch_val))
                 d_idx = np.sum(ratelist_down[:, 0] >= thrd_down)
 
                 tradeflag = np.sign(u_idx) - np.sign(d_idx)
-
-                # 異常なask/bid (ask < bid の場合) を弾く
-                if (depth1["asks"][0][0] < depth1["bids"][0][0]) or (depth2["asks"][0][0] < depth2["bids"][0][0]):
+                
+                if (depth1["asks"][0][0] < depth1["bids"][0][0]):
                     tradeflag = 0
-                    
+#                    print("invalid orderbook in {}, ask={}, bid={}".format(self.t1.name, depth1["asks"][0][0], depth1["bids"][0][0]))
+                if (depth2["asks"][0][0] < depth2["bids"][0][0]):
+                    tradeflag = 0
+#                    print("invalid orderbook in {}, ask={}, bid={}".format(self.t2.name, depth2["asks"][0][0], depth2["bids"][0][0]))
+
                 if tradeflag == 0:
                     tradable_value = 0
                 if tradeflag == 1:
@@ -281,15 +399,16 @@ tradeflag*ch_val))
                 if tradeflag == -1:
                     tradable_value = ratelist_down[d_idx -1][1]
                 sflag = 1
-            except (ccxt.NetworkError):
+            except (ccxt.NetworkError, RequestTimeout) as e:
+                print(time.asctime()[4:-5], "d1", e)
                 time.sleep(1)
+
             except:
                 self.logger.log(str(time.asctime()[4:-5]) + str(sys.exc_info()[0]))
                 print(np.cumsum(depth1["asks"][:, 1]))
                 print(np.cumsum(depth2["bids"][:, 1]))
                 print(np.cumsum(depth1["asks"][:, 1]).shape)
                 print(np.cumsum(depth2["bids"][:, 1]).shape)
-                
 
                 raise
                 time.sleep(3)
@@ -298,6 +417,58 @@ tradeflag*ch_val))
         return tradeflag, tradable_value, depth1["asks"][0][0], depth2["asks"][0][0], depth1["bids"][0][0], depth2["bids"][0][0]
         
 
+    # TOKEN対応
+    
+    # BNB/BIX残高取得
+    def balancebnb(self):
+        sflag = 0
+        while sflag == 0:
+            try:
+                bal = self.tbinance.fetch_balance()
+                sflag = 1
+            except (ccxt.NetworkError, RequestTimeout):
+                time.sleep(1)
+            except:
+                self.logger.log(str(sys.exc_info()[0]))
+                raise
 
+        return np.float(bal["free"]["BNB"])
 
+    def balancebix(self):
+        sflag = 0
+        while sflag == 0:
+            try:
+                bal = self.tbibox.fetch_balance()
+                sflag = 1
+            except (ccxt.NetworkError, RequestTimeout):
+                time.sleep(1)
+            except:
+                self.logger.log(str(sys.exc_info()[0]))
+                raise
+
+        return np.float(bal["free"]["BIX"])
+    
+     # BNB/BIX（手数料用）が少なかったら買う
+    def bnbcheck(self, bnb_amount=1.):
+        b_bnb = self.balancebnb()
+        if b_bnb < bnb_amount:
+            self.tbinance.timeout=10000
+            orderb = self.tbinance.create_market_buy_order("BNB/BTC", bnb_amount)
+            self.tbinance.timeout=2000
+            self.logger.log("bought {}BNB".format(bnb_amount))
+            time.sleep(3)
+            b_bnb = self.balancebnb()
+        return b_bnb
+
+    def bixcheck(self, bix_amount=10.):
+        b_bix = self.balancebix()
+        if b_bix < bix_amount:
+            bixprice = self.tbibox.fetch_order_book("BIX/BTC")["asks"][10][0]
+            self.tbibox.timeout=10000
+            orderb = self.tbibox.create_limit_buy_order("BIX/BTC", bix_amount, bixprice)
+            self.tbibox.timeout=2000
+            self.logger.log("bought {}BIX".format(bix_amount))
+            time.sleep(3)
+            b_bix = self.balancebix()
+        return b_bix
 
