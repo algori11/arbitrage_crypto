@@ -118,17 +118,23 @@ Binanceを使用しないのにBNBBUY = 1を指定したり, Biboxを使用し�
 > APIKEY = dummy_foobarfoobarfoobarfoobarfoo<br>
 > SECRET = dummy_abcdefghijklmnopqrstuvwxyz<br>
 
-取引に用いる取引所を指定します. また, このプログラムで取引所にアクセスできるように, APIキーとSECRETキーを各取引所のWebサイトで取得し, ここに記入します. APIキーの取得時, 情報閲覧の許可やTradeの許可を設定するのを忘れないようにしてください. このとき, セキュリティ上, APIからはWithdrawalできないよう設定することをお勧めします.
+取引に用いる取引所を指定します. また, このプログラムで取引所にアクセスできるように, APIキーとSECRETキーを各取引所のWebサイトで取得し, ここに記入します. APIキーの取得時, 情報閲覧の許可やTradeの許可を設定するのを忘れないようにしてください. このとき, セキュリティ上, APIからはWithdrawalできないよう設定することをお勧めします.<br>
 
 
 取引所名はccxtの内部コードの<br>
 > _1broker, _1btcxe, acx, allcoin, anxpro, bibox, binance, bit2c, bitbay, bitcoincoid, bitfinex, bitfinex2, bitflyer, bithumb, bitlish, bitmarket, bitmex, bitso, bitstamp, bitstamp1, bittrex, bitz, bl3p, bleutrade, braziliex, btcbox, btcchina, btcexchange, btcmarkets, btctradeim, btctradeua, btcturk, btcx, bxinth, ccex, cex, chbtc, chilebit, cobinhood, coincheck, coinegg, coinexchange, coinfloor, coingi, coinmarketcap, coinmate, coinsecure, coinspot, coolcoin, cryptopia, dsx, exmo, flowbtc, foxbit, fybse, fybsg, gatecoin, gateio, gdax, gemini, getbtc, hitbtc, hitbtc2, huobi, huobicny, huobipro, independentreserve, itbit, jubi, kraken, kucoin, kuna, lakebtc, liqui, livecoin, luno, lykke, mercado, mixcoins, nova, okcoincny, okcoinusd, okex, paymium, poloniex, qryptos, quadrigacx, quoinex, southxchange, surbitcoin, therock, tidex, urdubit, vaultoro, vbtc, virwox, wex, xbtce, yobit, yunbi, zaif, zb<br>
 
-の中にある文字列からを指定してください. 大手の取引所は大抵この中にあるかと思います.<br>
+の中にある文字列からを指定してください. 大手の取引所は大抵この中にあるかと思います.<br><br>
 
 手数料が安い取引所については以下の記事を参考にしてください.<br>
 [アービトラージに適した仮想通貨取引所（取引手数料0.1%以下）](http://algorisamurai.hateblo.jp/entry/2018/04/12/151313)<br>
-（HitBTCを用いる場合, バージョンアップしたAPIであるhitbtc2を指定するようにしてください.）<br><br>
+（HitBTCを用いる場合, バージョンアップしたAPIであるhitbtc2を指定するようにしてください.）<br>
+
+取引所によっては, 取引の際にパスワードを入力する必要がある場合（Bit-Zなど）があります. この場合は, Trade Passwordとして設定した文字列を<br>
+
+> PASS = dummy_password<br>
+
+の形で追記します.（現在, Bit-Zのみ取引パスワードの設定に対応しています. Trade Password の設定が必要な他の取引所があれば連絡いただければ対応します.）<br><br>
 
 ### ログ機能
 configの[SLACK][LINE][FILE_LOGGING]のそれぞれのFLAGを1にしてURLやトークン、ファイル名を入力することで, <br>
@@ -139,7 +145,8 @@ configの[SLACK][LINE][FILE_LOGGING]のそれぞれのFLAGを1にしてURLやト
 という形でログを出力することができます.<br><br>
 
 ### 各取引所への適応
-ccxtは完全には整備されていないところがあり, このアルゴリズムもそれぞれの取引所に完全に適応しているわけではないので, 選んだ取引所に応じて様々なエラーが発生すると予想されます. とりあえずBinanceとHitBTCでは正常動作することを確認しています. また, Bit-zとBibox, Zaifについては残高取得ができるところまでは確認しています.<br>
+ccxtを用いているとはいえ, 取引所ごとの特徴の違いなどから様々なエラーが発生することが予想されます. BinanceとHitBTCでは正常動作することを確認しています. また, Bit-zとBibox, Zaifについては残高取得ができるところまでは確認しています.<br>
+<b>18/04/26追記：修正してBit-Zで正常動作することを確認しました. （取引パスワードをconfig.iniに記入する必要があるので気をつけてください）</b><br>
 
 ほか, こんなエラーが出たよ, という報告や, その対策など投げていただけると嬉しく思います.<br><br>
 
