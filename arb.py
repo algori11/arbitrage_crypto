@@ -91,12 +91,14 @@ try:
 
             # up時の処理(t1のほうが高い場合)
             if tradeflag == 1:
-
-                ex.logger.log(time.asctime()[4:-5], 1, tradable_value, "{:.8f}".format(tradable_value*chrate_up*t1_ask))
+                msg = "{}, {}, tradable: {:.8f}, estimated profit (BTC): {:.8f}".format(time.asctime()[4:-5], 1, tradable_value, tradable_value*chrate_up*t1_ask)
+                ex.logger.log(msg)
+                
             
             # down時の処理(t2のほうが高い場合)
             if tradeflag == -1:
-                ex.logger.log(time.asctime()[4:-5], -1, tradable_value, "{:.8f}".format(tradable_value*chrate_down*t2_ask))
+                msg = "{}, {}, tradable: {:.8f}, estimated profit (BTC): {:.8f}".format(time.asctime()[4:-5], -1, tradable_value, tradable_value*chrate_down*t2_ask)
+                ex.logger.log(msg)
             
             # 休む（アクセス規制回避）
             time.sleep(3)
