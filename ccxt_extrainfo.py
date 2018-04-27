@@ -6,6 +6,6 @@ class info:
         minqdict["bitz"] = {
         "DASH/BTC": 0.01, "EOS/BTC": 1.0, "TRX/BTC": 2050, "ETH/BTC": 0.05,
         "LTC/BTC": 0.1, "EKT/BTC": 100, "ETC/BTC": 0.5, "LSK/BTC": 0.2, "NULS/BTC": 10,
-        "ZEC/BTC": 0.05, "MCO/BTC": 0.05, "QTUM/BTC": 0.01}
+        "ZEC/BTC": 0.05, "MCO/BTC": 0.05, "QTUM/BTC": 0.01, "BCH/BTC": 0.005}
         
         return minqdict
