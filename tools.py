@@ -12,22 +12,29 @@ import ccxt_extrainfo
 from pandas import DataFrame as df
 from ccxt.base.errors import RequestTimeout
 
-class exchange(object):
-    
-    def __init__(self, exchange1, exchange2, base, alt, logger, bnbbuy=False, bixbuy=False):
-        self.t1 = exchange1
-        self.t2 = exchange2
-        self.tquery = [self.t1, self.t2]
+class information(object):
+    def __init__(self, base, alt, passwords, bnbbuy=False, bixbuy=False):
 
         self.base = base
         self.alt = alt
         self.symbol = alt + "/"  + base
         self.bnbbuy = bnbbuy
         self.bixbuy = bixbuy
-        
-        # 取引所の情報を取得（.marketをゲット）
-        self.t1.load_markets()
-        self.t2.load_markets()
+        self.passwords = passwords
+    
+
+class exchange(object):
+    
+    def __init__(self, exchange1, exchange2, info, logger):
+        self.t1 = exchange1
+        self.t2 = exchange2
+        self.tquery = [self.t1, self.t2]
+
+        self.base = info.base
+        self.alt = info.alt
+        self.symbol = info.symbol
+        self.bnbbuy = info.bnbbuy
+        self.bixbuy = info.bixbuy
         
         self.minsize = max(self.minq(self.t1), self.minq(self.t2))
         if self.minsize == 0:
@@ -40,9 +47,12 @@ class exchange(object):
         self.market_order = ["binance", "hitbtc2"]
         
         # amountの量子化サイズを粗いほうで上書き
-        amount_precision = min(self.t1.markets[self.symbol]["precision"]["amount"], self.t2.markets[self.symbol]["precision"]["amount"])
-        self.t1.markets[self.symbol]["precision"]["amount"] = amount_precision
-        self.t2.markets[self.symbol]["precision"]["amount"] = amount_precision
+        try:
+            amount_precision = min(self.t1.markets[self.symbol]["precision"]["amount"], self.t2.markets[self.symbol]["precision"]["amount"])
+            self.t1.markets[self.symbol]["precision"]["amount"] = amount_precision
+            self.t2.markets[self.symbol]["precision"]["amount"] = amount_precision
+        except:
+            print("Caution: amount precision is not defined")
         
         # 表示する桁数を決定
         self.display = "{} [{:.6f}, {:."+str(self.digits)+"f}] ch:{:."+str(self.digits)+"f}"
@@ -55,7 +65,7 @@ class exchange(object):
         
 
         # BNB/BIX自動購入フラグがオンのとき、どの取引所がbinance/biboxか判断（self.tbinance/tbiboxをbinance/biboxの方に対応させる）
-        if bnbbuy == 1:
+        if info.bnbbuy == 1:
             if self.t1.name == "binance":
                 self.tbinance = self.t1
             elif self.t2.name == "binance":
@@ -63,7 +73,7 @@ class exchange(object):
             else:
                 print("binance is not selected")
                 raise
-        if bixbuy == 1:
+        if info.bixbuy == 1:
             if self.t1.name == "bibox":
                 self.tbibox = self.t1
             elif self.t2.name == "bibox":
@@ -72,7 +82,6 @@ class exchange(object):
                 print("bibox is not selected")
                 raise
 
-	
     
     # APIで認証できてるか調べる（認証できてたらbalanceを返す）
     def check_api_state(self):

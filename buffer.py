@@ -4,15 +4,17 @@
 """
 
 # スイッチ
-def buffer(ts, passwords):
+def buffer(ts, info):
     if ts.name == "binance":
         return buff_binance(ts)
     if ts.name == "hitbtc2":
         return buff_hitbtc2(ts)
     if ts.name == "bitz":
-        return buff_bitz(ts, passwords)
+        return buff_bitz(ts, info)
     if ts.name == "yobit":
         return buff_yobit(ts)
+    if ts.name == "bitflyer":
+        return buff_bitflyer(ts, info)
     else:
         return ts
 
@@ -26,10 +28,10 @@ def buff_hitbtc2(ts):
     pass
     return ts
 
-def buff_bitz(ts, passwords):
+def buff_bitz(ts, info):
     # 取引パスワードを追加
     try:
-        ts.password = passwords["bitz"]
+        ts.password = info.passwords["bitz"]
         return ts
     except:
         print("Please fill PASS in config.ini")
@@ -40,6 +42,10 @@ def buff_yobit(ts):
     ts.nonce = lambda :ccxt.Exchange.milliseconds()%1000000000
     return ts
 
+def buff_bitflyer(ts, info):
+    #今のところ特になし
+    pass
+    return ts
 
 
 
