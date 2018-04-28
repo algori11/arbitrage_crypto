@@ -23,7 +23,7 @@ def read(filename):
     PASSWORDS = {}
     try:
         PASSWORDS[NAME1] = inifile.get('EXCHANGE1', "PASS")
-    except:
+    except Exception as e:
         pass
 
     NAME2 = inifile.get('EXCHANGE2', "NAME")
@@ -32,7 +32,6 @@ def read(filename):
     try:
         PASSWORDS[NAME2] = inifile.get('EXCHANGE2', "PASS")
     except Exception as e:
-        print(e)
         pass
 
     threshold_up = float(inifile.get('settings', "threshold_up"))
