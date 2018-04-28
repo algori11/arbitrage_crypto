@@ -5,6 +5,7 @@ Usage:
   {f} [-h | --help]
   {f} [-c | --config <FILE>]
   {f} demo [-c | --config <FILE>]
+  {f} time [-c | --config <FILE>]
 
 Options:
   -h --help             : Show this message.
@@ -32,7 +33,11 @@ else:
 
 # 動作モードの設定
 demoflag = args['demo']
-print('Demo mode' if demoflag else 'Trade mode')
+timeflag = args['time']
+
+if demoflag: print('Demo mode')
+elif timeflag: print('Time mode')
+else: print('Trade mode')
 
 # ロガーのセットアップ
 l = loggers.aggregator(loggers.console_logger())
@@ -102,6 +107,34 @@ try:
             
             # 休む（アクセス規制回避）
             time.sleep(3)
+            
+    if (timeflag):
+        t1times = np.zeros(10)
+        t2times = np.zeros(10)
+        
+        for i in range(10):
+            sflag = 0
+            while sflag == 0:
+                try:
+                    start_time = time.time()
+                    ex.orderbook(ex.t1)
+                    t1time = time.time()
+                    ex.orderbook(ex.t2)
+                    t2time = time.time()
+                    
+                    t1times[i] = t1time - start_time
+                    t2times[i] = t2time - start_time
+
+                    print("{}/10: {}: {:.4f}s, {}: {:.4f}s".format(i+1, t1.name, t1times[i], t2.name, t2times[i]))
+                    sflag = 1
+                except Exception as e:
+                    print(e)
+                    time.sleep(1)
+            time.sleep(3)
+        print("median: {}: {:.4f}s, {}: {:.4f}s".format(t1.name, np.median(t1times), t2.name, np.median(t2times)))
+        print("max: {}: {:.4f}s, {}: {:.4f}s".format(t1.name, np.max(t1times), t2.name, np.max(t2times)))
+        print("min: {}: {:.4f}s, {}: {:.4f}s".format(t1.name, np.min(t1times), t2.name, np.min(t2times)))
+
     else:
         # アービトラージ
         
