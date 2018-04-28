@@ -12,7 +12,7 @@ def read(filename):
     global BNBBUY, BIXBUY
 
     inifile = configparser.ConfigParser()
-    inifile.read(filename, 'UTF-8')
+    inifile.read(filename, "utf_8_sig")
 
     CRYPTO_BASE = inifile.get('settings', "BASE")
     CRYPTO_ALT = inifile.get('settings', "ALT")
