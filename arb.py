@@ -111,8 +111,9 @@ try:
     if (timeflag):
         t1times = np.zeros(10)
         t2times = np.zeros(10)
+        i = 0
         
-        for i in range(10):
+        while i < 10:
             sflag = 0
             while sflag == 0:
                 try:
@@ -127,6 +128,7 @@ try:
 
                     print("{}/10: {}: {:.4f}s, {}: {:.4f}s".format(i+1, t1.name, t1times[i], t2.name, t2times[i]))
                     sflag = 1
+                    i += 1
                 except Exception as e:
                     print(e)
                     time.sleep(1)
