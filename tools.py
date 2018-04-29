@@ -139,7 +139,7 @@ class exchange(object):
             except (ccxt.NetworkError, RequestTimeout) as e:
                 time.sleep(1)
             except:
-                # self.logger.log(str(sys.exc_info()[0]))
+                self.logger.log("{} {}".format(time.asctime()[4:-5], str(sys.exc_info()[0])))
                 # raise
                 time.sleep(1)
 
@@ -331,7 +331,7 @@ class exchange(object):
                     except (ccxt.NetworkError, RequestTimeout) as e:
                         response[query.name]=0
                     except Exception as e:
-                        print("unexpected get_orderbook error", str(sys.exc_info()[0]))
+                        self.logger.log("{} {}".format(time.asctime()[4:-5], str(sys.exc_info()[0])))
                         response[query.name]=0
 
                     query_queue.task_done()
@@ -439,7 +439,7 @@ class exchange(object):
             except (ccxt.NetworkError, RequestTimeout):
                 time.sleep(1)
             except:
-                # self.logger.log(str(sys.exc_info()[0]))
+                self.logger.log("{} {}".format(time.asctime()[4:-5], str(sys.exc_info()[0])))
                 # raise
                 time.sleep(1)
 
@@ -454,7 +454,7 @@ class exchange(object):
             except (ccxt.NetworkError, RequestTimeout):
                 time.sleep(1)
             except:
-                # self.logger.log(str(sys.exc_info()[0]))
+                self.logger.log("{} {}".format(time.asctime()[4:-5], str(sys.exc_info()[0])))
                 # raise
                 time.sleep(1)
 
