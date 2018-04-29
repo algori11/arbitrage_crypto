@@ -139,8 +139,9 @@ class exchange(object):
             except (ccxt.NetworkError, RequestTimeout) as e:
                 time.sleep(1)
             except:
-                self.logger.log(str(sys.exc_info()[0]))
-                raise
+                # self.logger.log(str(sys.exc_info()[0]))
+                # raise
+                time.sleep(1)
 
         return t1_base, t1_alt, t2_base, t2_alt
     
@@ -438,8 +439,9 @@ class exchange(object):
             except (ccxt.NetworkError, RequestTimeout):
                 time.sleep(1)
             except:
-                self.logger.log(str(sys.exc_info()[0]))
-                raise
+                # self.logger.log(str(sys.exc_info()[0]))
+                # raise
+                time.sleep(1)
 
         return np.float(bal["free"]["BNB"])
 
@@ -452,8 +454,9 @@ class exchange(object):
             except (ccxt.NetworkError, RequestTimeout):
                 time.sleep(1)
             except:
-                self.logger.log(str(sys.exc_info()[0]))
-                raise
+                # self.logger.log(str(sys.exc_info()[0]))
+                # raise
+                time.sleep(1)
 
         return np.float(bal["free"]["BIX"])
     
