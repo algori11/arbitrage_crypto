@@ -139,7 +139,7 @@ class exchange(object):
             except (ccxt.NetworkError, RequestTimeout) as e:
                 time.sleep(1)
             except:
-                self.logger.log("{} {}".format(time.asctime()[4:-5], str(sys.exc_info()[0])))
+#                 self.logger.log("{} {}".format(time.asctime()[4:-5], str(sys.exc_info()[0])))
                 time.sleep(5)
 
         return t1_base, t1_alt, t2_base, t2_alt
@@ -304,7 +304,7 @@ class exchange(object):
                     except (ccxt.NetworkError, RequestTimeout) as e:
                         response[query.name]=0
                     except Exception as e:
-                        self.logger.log("{} {}".format(time.asctime()[4:-5], str(sys.exc_info()[0])))
+#                         self.logger.log("{} {}".format(time.asctime()[4:-5], str(sys.exc_info()[0])))
                         response[query.name]=0
 
                     query_queue.task_done()
@@ -408,7 +408,7 @@ class exchange(object):
             except (ccxt.NetworkError, RequestTimeout):
                 time.sleep(1)
             except:
-                self.logger.log("{} {}".format(time.asctime()[4:-5], str(sys.exc_info()[0])))
+#                 self.logger.log("{} {}".format(time.asctime()[4:-5], str(sys.exc_info()[0])))
                 time.sleep(5)
 
         return np.float(bal["free"]["BNB"])
@@ -422,7 +422,7 @@ class exchange(object):
             except (ccxt.NetworkError, RequestTimeout):
                 time.sleep(1)
             except:
-                self.logger.log("{} {}".format(time.asctime()[4:-5], str(sys.exc_info()[0])))
+#                 self.logger.log("{} {}".format(time.asctime()[4:-5], str(sys.exc_info()[0])))
                 time.sleep(5)
 
         return np.float(bal["free"]["BIX"])
