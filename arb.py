@@ -49,7 +49,6 @@ if config.FILE_LOG == 1:
     l.append(loggers.file_logger(config.FILE_NAME))
 
 try:
-    print(config.CRYPTO_BASE + "/" + config.CRYPTO_ALT)
 
     # 取引所1, 取引所2のclass
     exec("t1 = ccxt.{}({{'apiKey': '{}', 'secret': '{}'}})".format(config.NAME1, config.APIKEY1, config.SECKEY1))
@@ -60,17 +59,9 @@ try:
     # 取引通貨などの情報をまとめたclass
     info_set = tools.information(config.CRYPTO_BASE, config.CRYPTO_ALT, config.PASSWORDS, config.BNBBUY, config.BIXBUY)
     
-    # 取引所の情報を取得（.marketをゲット）
-    t1.load_markets()
-    t2.load_markets()
-    
     # 取引所インスタンスの修飾
     t1 = buffer.buffer(t1, info_set)
     t2 = buffer.buffer(t2, info_set)
-    
-    # timeoutの時間を2秒に変更
-    t1.timeout = 2000
-    t2.timeout = 2000
     
     # まとめたclassを作成
     # インスタンス作成時にticksizeを出力
@@ -153,8 +144,6 @@ try:
             if reportflag == 1:
                 t1_base, t1_alt, t2_base, t2_alt = np.array(ex.balances())
                 ex.status(t1_base, t1_alt, t2_base, t2_alt, trade_val, tradeflag)
-#                detailの出力（取引したときのbest bid/arbを表示（取引所のサイトの約定価格と比較して、うまく稼働してるかをチェックできます））
-#                ex.status_detail(t1_base, t1_alt, t2_base, t2_alt, trade_val, tradeflag, amp*t1_ask, amp*t2_ask, amp*t1_bid, amp*t2_bid)
                 reportflag = 0
             
             # 板監視
@@ -172,8 +161,6 @@ try:
                 if trade_val >= ex.minsize:
                     ex.order_up(trade_val, chrate_up, int(t2_alt < t1_base/t1_ask), t1_bid*0.99, t2_ask*1.01)
                     reportflag = 1
-                else:
-                    reportflag = 0
             
             # down時の処理
             if tradeflag == -1:
@@ -181,8 +168,7 @@ try:
                 if trade_val >= ex.minsize:
                     ex.order_down(trade_val, chrate_down, int(t1_alt < t2_base/t2_ask), t2_bid*0.99, t1_ask*1.01)
                     reportflag = 1
-                else:
-                    reportflag = 0
+
             
             # 休む（アクセス規制回避）
             time.sleep(3)
@@ -193,9 +179,6 @@ try:
                 new_t1_base, new_t1_alt, new_t2_base, new_t2_alt = np.array(ex.balances())
                 if new_t1_base != t1_base or new_t2_base != t2_base or new_t1_alt != t1_alt or new_t2_alt != t2_alt:
                     reportflag = 1
-                else:
-                    reportflag = 0
-
 
 
 finally:

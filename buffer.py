@@ -5,6 +5,8 @@
 
 # スイッチ
 def buffer(ts, info):
+    ts.load_markets()
+    
     if ts.name == "binance":
         return buff_binance(ts)
     if ts.name == "hitbtc2":

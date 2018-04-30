@@ -8,6 +8,7 @@ import sys
 import queue
 import threading
 import socket
+import traceback
 import ccxt_extrainfo
 from pandas import DataFrame as df
 from ccxt.base.errors import RequestTimeout
@@ -59,10 +60,13 @@ class exchange(object):
 
         self.logger = logger
         
+        print(self.symbol)
         print(self.t1.name + "/" + self.t2.name)
         print("minsize:"+str(self.minsize))
 
-        
+        self.check_api_state()
+        self.t1.timeout=2000
+        self.t2.timeout=2000
 
         # BNB/BIX自動購入フラグがオンのとき、どの取引所がbinance/biboxか判断（self.tbinance/tbiboxをbinance/biboxの方に対応させる）
         if info.bnbbuy == 1:
@@ -85,8 +89,6 @@ class exchange(object):
     
     # APIで認証できてるか調べる（認証できてたらbalanceを返す）
     def check_api_state(self):
-        self.t1.timeout=10000
-        self.t2.timeout=10000
         try:
             t1_base, t1_alt = self.balance(self.t1)
         except Exception as e:
@@ -98,8 +100,6 @@ class exchange(object):
             print(self.t2.name, "API authentication error")
             raise
         print("authentication success (balance)")
-        self.t1.timeout=2000
-        self.t2.timeout=2000
         return t1_base, t1_alt, t2_base, t2_alt
 
     # 取引最小単位を取得（＆通貨ペアが存在するかチェック）
@@ -140,8 +140,7 @@ class exchange(object):
                 time.sleep(1)
             except:
                 self.logger.log("{} {}".format(time.asctime()[4:-5], str(sys.exc_info()[0])))
-                # raise
-                time.sleep(1)
+                time.sleep(5)
 
         return t1_base, t1_alt, t2_base, t2_alt
     
@@ -178,11 +177,8 @@ class exchange(object):
                     response[thread] = self.sell_order(self.t1, ch_val, price_sell)
                 if thread == 1:
                     response[thread] = self.buy_order(self.t2, ch_val*(1.+chrate*bflag), price_buy)
-            except (ccxt.NetworkError, RequestTimeout) as e:
-                print("NetworkError: ", str(sys.exc_info()[0]))
-                response[thread]=False
-            except Exception as e:
-                print("Unexpected order error: ", str(sys.exc_info()[0]))
+            except Exception:
+                print("order error: " + str(traceback.format_exc()))
                 response[thread]=False
 
             thread_queue.task_done()
@@ -223,11 +219,8 @@ class exchange(object):
                     response[thread] = self.buy_order(self.t1, ch_val*(1.+chrate*bflag), price_buy)
                 if thread == 1:
                     response[thread] = self.sell_order(self.t2, ch_val, price_sell)
-            except (ccxt.NetworkError, RequestTimeout) as e:
-                print("NetworkError: ", str(sys.exc_info()[0]))
-                response[thread]=False
-            except Exception as e:
-                print("Unexpected order error: ", str(sys.exc_info()[0]))
+            except Exception:
+                print("order error: " + str(traceback.format_exc()))
                 response[thread]=False
 
             thread_queue.task_done()
@@ -254,26 +247,6 @@ class exchange(object):
         order1, order2 = response
         return order1, order2
 
-#     # 売り注文と買い注文をペアにした関数
-#     # t2でペア通貨を買い、t1で売る
-#     def order_up(self, ch_val, chrate, bflag, price_sell, price_buy):
-#         try:
-#             order1 = self.sell_order(self.t1, ch_val, price_sell)
-#             order2 = self.buy_order(self.t2, ch_val*(1.+chrate*bflag), price_buy)
-#         except:
-#             self.logger.log(str(sys.exc_info()[0]))
-#             raise
-#         return order1, order2 
-    
-#     # t2でペア通貨を売り、t1で買う
-#     def order_down(self, ch_val, chrate, bflag, price_sell, price_buy):
-#         try:
-#             order1 = self.buy_order(self.t1, ch_val*(1.+chrate*bflag), price_buy)
-#             order2 = self.sell_order(self.t2, ch_val, price_sell)
-#         except:
-#             self.logger.log(str(sys.exc_info()[0]))
-#             raise
-#         return order1, order2
 
     # 現在の状態を表示
     def status(self, t1_base, t1_alt, t2_base, t2_alt, ch_val, tradeflag):
@@ -395,12 +368,8 @@ class exchange(object):
 
                 tradeflag = np.sign(u_idx) - np.sign(d_idx)
                 
-                if (depth1["asks"][0][0] < depth1["bids"][0][0]):
+                if (depth1["asks"][0][0] < depth1["bids"][0][0]) or (depth2["asks"][0][0] < depth2["bids"][0][0]):
                     tradeflag = 0
-#                    print("invalid orderbook in {}, ask={}, bid={}".format(self.t1.name, depth1["asks"][0][0], depth1["bids"][0][0]))
-                if (depth2["asks"][0][0] < depth2["bids"][0][0]):
-                    tradeflag = 0
-#                    print("invalid orderbook in {}, ask={}, bid={}".format(self.t2.name, depth2["asks"][0][0], depth2["bids"][0][0]))
 
                 if tradeflag == 0:
                     tradable_value = 0
@@ -440,8 +409,7 @@ class exchange(object):
                 time.sleep(1)
             except:
                 self.logger.log("{} {}".format(time.asctime()[4:-5], str(sys.exc_info()[0])))
-                # raise
-                time.sleep(1)
+                time.sleep(5)
 
         return np.float(bal["free"]["BNB"])
 
@@ -455,8 +423,7 @@ class exchange(object):
                 time.sleep(1)
             except:
                 self.logger.log("{} {}".format(time.asctime()[4:-5], str(sys.exc_info()[0])))
-                # raise
-                time.sleep(1)
+                time.sleep(5)
 
         return np.float(bal["free"]["BIX"])
     
