@@ -67,9 +67,6 @@ try:
     # インスタンス作成時にticksizeを出力
     ex = tools.exchange(t1, t2, info_set, l)
 
-    # API が正常に働いてるかチェック（authentication success）
-    ex.check_api_state()
-
     # 閾値の設定
     thrd_up = config.threshold_up
     thrd_down = config.threshold_down
