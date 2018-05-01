@@ -287,7 +287,30 @@ class exchange(object):
         book = ts.fetch_order_book(symbol=self.symbol, limit=20)
         return {"asks": np.array(book["asks"][:20], dtype=np.float), "bids": np.array(book["bids"][:20], dtype=np.float)}
     
-     
+    # 裁定機会と量を検出する関数
+    def chance_detect(self, asks, bids, threshold):
+        ai, bi = 0, 0
+        asksum, bidsum = np.array(asks), np.array(bids)
+        asksum[:, 1],  bidsum[:, 1] = np.cumsum(asks[:,1]), np.cumsum(bids[:,1])
+
+        if bidsum[bi][0]/asksum[ai][0] > threshold:
+            for i in range(20):
+                if bidsum[bi][0]/asksum[ai][0] > threshold:
+                    minflag = np.argmin([asksum[ai][1], bidsum[bi][1]])
+                    if minflag == 0: ai += 1
+                    else: bi += 1
+                else:
+                    if minflag == 0: ai -= 1
+                    else: bi -= 1
+                    break
+            chanceflag = 1
+            value = np.min([asksum[ai][1], bidsum[bi][1]])
+        else:
+            chanceflag = 0
+            value = 0
+
+        return chanceflag, value
+
     # 板を監視して、指定した閾値以上での取引の可否と取引可能な量、そのときの通貨のask値を取得
     # 出力のtradeflagが1だったらt2で買ってt1で売る取引(order_up)
     # 出力のtradeflagが-1だったらt1で買ってt2で売る取引(order_down) がそれぞれ利益を出す
@@ -295,15 +318,19 @@ class exchange(object):
         sflag = 0
         while sflag == 0:
             try:
+                # 板の取得
                 response = {}
 
                 def query_worker(query_queue):
                     query = query_queue.get()
                     try:
+                        # コメントアウトでBinanceの応答が早すぎるのをちょっと調整
+                        #if query.name == "binance": time.sleep(0.05)
+                        
                         response[query.name]=self.orderbook(query)
                     except (ccxt.NetworkError, RequestTimeout) as e:
                         response[query.name]=0
-                    except Exception as e:
+                    except:
 #                         self.logger.log("{} {}".format(time.asctime()[4:-5], str(sys.exc_info()[0])))
                         response[query.name]=0
 
@@ -323,68 +350,27 @@ class exchange(object):
                 if response[self.t1.name] == 0 or response[self.t2.name] == 0:
                     time.sleep(1)
                     continue
-
-
                 depth1 = response[self.t1.name]
                 depth2 = response[self.t2.name]
-
-#                depth1 = self.orderbook(self.t1)
-#                depth2 = self.orderbook(self.t2)
-
-                n_depth = min(len(depth1["asks"]), len(depth2["asks"]), len(depth1["bids"]), len(depth2["bids"]))
-                cum_down1 = np.vstack([np.cumsum(depth1["asks"][:, 1][:n_depth]), np.zeros(n_depth)])
-                cum_down2 = np.vstack([np.cumsum(depth2["bids"][:, 1][:n_depth]), np.ones(n_depth)])
-                cum_down = np.hstack((cum_down1, cum_down2))
-                sorder_down = cum_down[1][np.argsort(cum_down[0])][:n_depth]
-
-                cum_up1 = np.vstack([np.cumsum(depth1["bids"][:, 1][:n_depth]), np.ones(n_depth)])
-                cum_up2 = np.vstack([np.cumsum(depth2["asks"][:, 1][:n_depth]), np.zeros(n_depth)])
-                cum_up = np.hstack((cum_up1, cum_up2))
-                sorder_up = cum_up[1][np.argsort(cum_up[0])][:n_depth]
-
-                i1, i2 = 0, 0
-                ratelist_up = np.zeros((n_depth,2))
-                for si in range(n_depth):
-                    so = sorder_up[si]
-                    if so == 0:
-                        ratelist_up[si] = depth1["bids"][i1][0]/depth2["asks"][i2][0], cum_up2[0][i2]
-                        i2 +=1
-                    if so == 1:
-                        ratelist_up[si] = depth1["bids"][i1][0]/depth2["asks"][i2][0], cum_up1[0][i1]
-                        i1 +=1
-
-                i1, i2= 0, 0
-                ratelist_down = np.zeros((n_depth,2))
-                for si in range(n_depth):
-                    so = sorder_down[si]
-                    if so == 0:
-                        ratelist_down[si] = depth2["bids"][i2][0]/depth1["asks"][i1][0], cum_down1[0][i1]
-                        i1 +=1
-                    if so == 1:
-                        ratelist_down[si] = depth2["bids"][i2][0]/depth1["asks"][i1][0], cum_down2[0][i2]
-                        i2 +=1
-                u_idx = np.sum(ratelist_up[:, 0] >= thrd_up)
-                d_idx = np.sum(ratelist_down[:, 0] >= thrd_down)
-
-                tradeflag = np.sign(u_idx) - np.sign(d_idx)
+                
+                #裁定機会の計算
+                u_chance, u_value = self.chance_detect(depth2["asks"], depth1["bids"], thrd_up)
+                d_chance, d_value = self.chance_detect(depth1["asks"], depth2["bids"], thrd_down)
+                tradeflag = u_chance - d_chance
                 
                 if (depth1["asks"][0][0] < depth1["bids"][0][0]) or (depth2["asks"][0][0] < depth2["bids"][0][0]):
                     tradeflag = 0
 
-                if tradeflag == 0:
-                    tradable_value = 0
-                if tradeflag == 1:
-                    tradable_value = ratelist_up[u_idx -1][1]
-                if tradeflag == -1:
-                    tradable_value = ratelist_down[d_idx -1][1]
+                if tradeflag == 0: tradable_value = 0
+                if tradeflag == 1: tradable_value = u_value
+                if tradeflag == -1: tradable_value = d_value
                 sflag = 1
-            except (ccxt.NetworkError, RequestTimeout) as e:
-                print(time.asctime()[4:-5], "d1", e)
+                
+            except (ccxt.NetworkError, RequestTimeout):
                 time.sleep(1)
-
             except:
-                self.logger.log(str(time.asctime()[4:-5]) + str(sys.exc_info()[0]))
-                time.sleep(3)
+#                 self.logger.log("{} {}".format(time.asctime()[4:-5], str(sys.exc_info()[0])))
+                time.sleep(5)
 
         return tradeflag, tradable_value, depth1["asks"][0][0], depth2["asks"][0][0], depth1["bids"][0][0], depth2["bids"][0][0]
         
@@ -443,4 +429,5 @@ class exchange(object):
             time.sleep(3)
             b_bix = self.balancebix()
         return b_bix
+
 
