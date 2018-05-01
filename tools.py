@@ -384,14 +384,7 @@ class exchange(object):
 
             except:
                 self.logger.log(str(time.asctime()[4:-5]) + str(sys.exc_info()[0]))
-                print(np.cumsum(depth1["asks"][:, 1]))
-                print(np.cumsum(depth2["bids"][:, 1]))
-                print(np.cumsum(depth1["asks"][:, 1]).shape)
-                print(np.cumsum(depth2["bids"][:, 1]).shape)
-
-                raise
                 time.sleep(3)
-                
 
         return tradeflag, tradable_value, depth1["asks"][0][0], depth2["asks"][0][0], depth1["bids"][0][0], depth2["bids"][0][0]
         
