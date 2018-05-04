@@ -1,3 +1,4 @@
+
 import time
 import json
 import numpy as np
@@ -7,6 +8,7 @@ import threading
 import loggers_tri
 import config_tri
 import ccxt
+import datetime
 
 from pandas import DataFrame as df
 
@@ -56,7 +58,10 @@ def get_orderbooks(maxtime):
             
             def query_worker(query_queue):
                 query = query_queue.get()
-                response[query]=t1.fetch_order_book(query, limit=10)
+                try:
+                    response[query]=t1.fetch_order_book(query, limit=10)
+                except:
+                    response[query]=False
                 query_queue.task_done()
 
             # queueを設定
@@ -68,7 +73,13 @@ def get_orderbooks(maxtime):
             while not query_queue.empty():
                 w_thread = threading.Thread(target=query_worker, args=(query_queue,))
                 w_thread.start()
+            
+            # threadがおわって揃うのを待つ
             query_queue.join()
+            
+            if response[PAIR1] == False or response[PAIR2] == False or response[PAIR3] == False:
+                self.logger.log("{} {}".format(time.asctime()[4:-5], str(sys.exc_info()[0])))
+                continue
             
             book1 = response[PAIR1]
             book2 = response[PAIR2]
@@ -92,19 +103,17 @@ def root_u(ask1, ask2, bid3, threshold):
     amount1 = np.cumsum(ask1[:, 1] / ask2[-1][0])
     amount2 = np.cumsum(ask2[:, 1])
     amount3 = np.cumsum(bid3[:, 1])
-
-    ratio = bid3[:, 0][idx[2]]/(ask1[:, 0][idx[0]]* ask2[:, 0][idx[1]])
-    if ratio < threshold:
-        return 0, 0
-    value = np.min([amount1[idx[0]], amount2[idx[1]], amount3[idx[2]]])
+    
+    ratio = 0
+    value = 0
 
     for i in range(10):
-        idx[np.argmin([amount1[idx[0]], amount2[idx[1]], amount3[idx[2]]])] += 1
         new_ratio = bid3[:, 0][idx[2]]/(ask1[:, 0][idx[0]]* ask2[:, 0][idx[1]])
         if new_ratio < threshold:
             break
         ratio = new_ratio
         value = np.min([amount1[idx[0]], amount2[idx[1]], amount3[idx[2]]])
+        idx[np.argmin([amount1[idx[0]], amount2[idx[1]], amount3[idx[2]]])] += 1
     return ratio, value
 
 # BASE1→ALT→BASE2→BASE1 のルート
@@ -115,19 +124,17 @@ def root_d(bid1, bid2, ask3, threshold):
     amount1 = np.cumsum(bid1[:, 1] / bid2[-1][0])
     amount2 = np.cumsum(bid2[:, 1])
     amount3 = np.cumsum(ask3[:, 1])
-
-    ratio = bid1[:, 0][idx[0]] * bid2[:, 0][idx[1]]/ask3[:, 0][idx[2]]
-    if ratio < threshold:
-        return 0, 0
-    value = np.min([amount1[idx[0]], amount2[idx[1]], amount3[idx[2]]])
+    
+    ratio = 0
+    value = 0
 
     for i in range(10):
-        idx[np.argmin([amount1[idx[0]], amount2[idx[1]], amount3[idx[2]]])] += 1
         new_ratio = bid1[:, 0][idx[0]] * bid2[:, 0][idx[1]]/ask3[:, 0][idx[2]]
         if new_ratio < threshold:
             break
         ratio = new_ratio
         value = np.min([amount1[idx[0]], amount2[idx[1]], amount3[idx[2]]])
+        idx[np.argmin([amount1[idx[0]], amount2[idx[1]], amount3[idx[2]]])] += 1
     return ratio, value
 
 # 初期化
@@ -154,24 +161,24 @@ while True:
     # ルートuで回せばプラスが出る場合
     if ratio_u > 0 and value_u > limit0:
         count += 1
-        print(-1)
         root = "u"
         ratio, value = ratio_u, value_u
+        l.log("{} {} ratio:{} value:{}".format(root, str(datetime.datetime.now())[5:-4], ratio, value))
         time.sleep(maxtime) # ここにかわりに注文のコードを書いて取引
     
     # ルートdで回せばプラスが出る場合
     elif ratio_d > 0 and value_d > limit0:
         count += 1
-        print(1)
         root = "d"
         ratio, value = ratio_d, value_d
+        l.log("{} {} ratio:{} value:{}".format(root, str(datetime.datetime.now())[5:-4], ratio, value))
         time.sleep(maxtime) # ここにかわりに注文のコードを書いて取引
 
     # 
     else:
-        if count != 0:
-            # 歪みが解消されたとき, どんな歪みだったかを表示
-            # (利益を出せたルート(u/d), 歪みの長さ（連続して板に歪みがあった回数）, 期待利益率, 量(ALT単位))
-            l.log("{} {} {} {}".format(root, count, ratio, value))
+#        if count != 0:
+#            # 歪みが解消されたとき, どんな歪みだったかを表示
+#            # (利益を出せたルート(u/d), 歪みの長さ（連続して板に歪みがあった回数）, 期待利益率, 量(ALT単位))
+#            l.log("{} {} {} {}".format(root, count, ratio, value))
         count = 0
         time.sleep(1)
