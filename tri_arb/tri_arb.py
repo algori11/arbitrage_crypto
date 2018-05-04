@@ -89,7 +89,7 @@ def get_orderbooks(maxtime):
 def root_u(ask1, ask2, bid3, threshold): 
     idx = np.zeros(3).astype(int)
 
-    amount1 = np.cumsum(ask1[:, 1] * ask2[-1][0])
+    amount1 = np.cumsum(ask1[:, 1] / ask2[-1][0])
     amount2 = np.cumsum(ask2[:, 1])
     amount3 = np.cumsum(bid3[:, 1])
 
@@ -112,7 +112,7 @@ def root_u(ask1, ask2, bid3, threshold):
 def root_d(bid1, bid2, ask3, threshold): 
     idx = np.zeros(3).astype(int)
 
-    amount1 = np.cumsum(bid1[:, 1] * bid2[-1][0])
+    amount1 = np.cumsum(bid1[:, 1] / bid2[-1][0])
     amount2 = np.cumsum(bid2[:, 1])
     amount3 = np.cumsum(ask3[:, 1])
 
