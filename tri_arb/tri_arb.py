@@ -149,7 +149,7 @@ while True:
     ratio_d, value_d = root_d(bid1, bid2, ask3, threshold)
     
     # （取引できる最小量(ALT単位)を計算）
-    limit0 = max(limit1*ask2[0][0]*1.1, limit2, limit3)
+    limit0 = max(limit1*1.1/ask2[0][0], limit2, limit3)
     
     # ルートuで回せばプラスが出る場合
     if ratio_u > 0 and value_u > limit0:
