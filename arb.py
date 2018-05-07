@@ -176,19 +176,19 @@ try:
             # up時の処理
             # 裁定機会があるかチェック
             if tradeflag == 1:
-              　　　　
+                
                 # 取引する量を決定
                 trade_val = min(val_up*0.8, tradable_value)
                 
                 # 取引する量が取引最小量より大きいかチェック
                 if trade_val >= ex.minsize:
-                  　　　　
+                    
                     # 取引(詳細はtool.pyのorder_upを参照)
                     # bid*0.9 と ask*1.1 は, market_orderができない取引所の場合に高いask, 安いbidの指値で
                     # 成行注文を行うためのもの
                     ex.order_up(trade_val, chrate_up, int(t2_alt < t1_base/t1_ask), t1_bid*0.9, t2_ask*1.1)
-                
-                　　　　　　　　# 取引したらreportflagをオン
+                    
+                    # 取引したらreportflagをオン
                     reportflag = 1
             
             # down時の処理(upのものを参照)
