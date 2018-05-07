@@ -53,6 +53,7 @@ try:
     # 取引所1, 取引所2のインスタンスを作成
     exec("t1 = ccxt.{}({{'apiKey': '{}', 'secret': '{}'}})".format(config.NAME1, config.APIKEY1, config.SECKEY1))
     exec("t2 = ccxt.{}({{'apiKey': '{}', 'secret': '{}'}})".format(config.NAME2, config.APIKEY2, config.SECKEY2))
+    
     # インスタンスに取引所の名前を追加
     t1.name = config.NAME1
     t2.name = config.NAME2
@@ -71,8 +72,9 @@ try:
     # 閾値の設定
     thrd_up = config.threshold_up
     thrd_down = config.threshold_down
+    
     # chrateは、基軸通貨とペアにした通貨のどちらを増やすかの判断に使用（残高の持ち方の最適化まわりの問題）
-    # order_upとdownの第三引数に関連します：これらを0にすると基軸通貨だけが増えるように（ペアにした通貨が手数料で減るのでなんらかの調整が必要）
+    # order_upとdownの第三引数に関連しています：これらを0にすると基軸通貨だけが増えるように（ペアにした通貨が手数料で減るのでなんらかの調整が必要）
     chrate_up = thrd_up-1.001
     chrate_down = thrd_down-1.001
 
@@ -80,6 +82,7 @@ try:
     reportflag = 1
     trade_val = 0.
     cnt = 0
+    
     # 板を取得
     tradeflag, tradable_value, t1_ask, t2_ask, t1_bid, t2_bid = ex.rate_c(thrd_up, thrd_down)
     
@@ -155,11 +158,13 @@ try:
                 reportflag = 0
             
             
-            # 板を監視（関数はtool.py内のrate_c()参照）
-            # 出力は
-            # tradeflag: 裁定機会の有無（ないときは0, あるときは取引所1のほうが高い or 安い で 1 or -1 を返す）
-            # tradable_value: 裁定取引ができる通貨の量（ペアにした通貨単位）
-            # t1_ask, t2_ask, t1_bid, t2_bid （取引所 1, 2 のbest ask, best bid　を返す）
+            """
+            板を監視（関数はtool.py内のrate_c()参照）
+            出力は
+            tradeflag: 裁定機会の有無（ないときは0, あるときは取引所1のほうが高い or 安い で 1 or -1 を返す）
+            tradable_value: 裁定取引ができる通貨の量（ペアにした通貨単位）
+            t1_ask, t2_ask, t1_bid, t2_bid: 取引所 1, 2 のbest ask, best bid
+            """
             tradeflag, tradable_value, t1_ask, t2_ask, t1_bid, t2_bid = ex.rate_c(thrd_up, thrd_down)
             
             
@@ -171,25 +176,31 @@ try:
             # up時の処理
             # 裁定機会があるかチェック
             if tradeflag == 1:
-              　　　　# 取引する量を決定
+              　　　　
+                # 取引する量を決定
                 trade_val = min(val_up*0.8, tradable_value)
+                
                 # 取引する量が取引最小量より大きいかチェック
                 if trade_val >= ex.minsize:
-                  　　　　# 取引(詳細はtool.pyのorder_upを参照)
-                    ex.order_up(trade_val, chrate_up, int(t2_alt < t1_base/t1_ask), t1_bid*0.99, t2_ask*1.01)
-                    # 取引したらreportflagをオン
+                  　　　　
+                    # 取引(詳細はtool.pyのorder_upを参照)
+                    # bid*0.9 と ask*1.1 は, market_orderができない取引所の場合に高いask, 安いbidの指値で
+                    # 成行注文を行うためのもの
+                    ex.order_up(trade_val, chrate_up, int(t2_alt < t1_base/t1_ask), t1_bid*0.9, t2_ask*1.1)
+                
+                　　　　　　　　# 取引したらreportflagをオン
                     reportflag = 1
             
-            # down時の処理
+            # down時の処理(upのものを参照)
             if tradeflag == -1:
                 trade_val = min(val_down*0.8, tradable_value)
                 if trade_val >= ex.minsize:
-                    ex.order_down(trade_val, chrate_down, int(t1_alt < t2_base/t2_ask), t2_bid*0.99, t1_ask*1.01)
+                    ex.order_down(trade_val, chrate_down, int(t1_alt < t2_base/t2_ask), t2_bid*0.9, t1_ask*1.1)
                     reportflag = 1
 
             
             # 休む（アクセス規制回避）
-            # Binanceのアクセス規制は1200リクエスト/分以上でかかるといわれています
+            # Binanceのアクセス規制は1200リクエスト/分以上、10注文/秒以上でかかるといわれています
             time.sleep(3)
             
             # 何もないときもたまにbalanceを更新
