@@ -34,10 +34,15 @@ def buff_bitz(ts, info):
     # 取引パスワードを追加
     try:
         ts.password = info.passwords["bitz"]
-        return ts
     except:
         print("Please fill PASS in config.ini")
         raise
+    # 取引通貨ペアの最小取引量の情報（APIで取得できない）を.marketsに追加
+    min_dict = {"DASH/BTC": 0.01, "EOS/BTC": 1.0, "TRX/BTC": 2050, "ETH/BTC": 0.05,
+        "LTC/BTC": 0.1, "EKT/BTC": 100, "ETC/BTC": 0.5, "LSK/BTC": 0.2, "NULS/BTC": 10,
+        "ZEC/BTC": 0.05, "MCO/BTC": 0.05, "QTUM/BTC": 0.01, "BCH/BTC": 0.005}
+    ts.markets[info.symbol]["limits"] = {"amount":{"min": min_dict[info.symbol]}}
+    return ts
 
 def buff_yobit(ts):
     # nonceを1秒よりはやい頻度で更新するよう再定義（未検証）

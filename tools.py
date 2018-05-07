@@ -9,7 +9,6 @@ import queue
 import threading
 import socket
 import traceback
-import ccxt_extrainfo
 from pandas import DataFrame as df
 from ccxt.base.errors import RequestTimeout
 
@@ -55,16 +54,16 @@ class exchange(object):
             
         # market_buy/sellが可能なリスト（暫定, 可能ならここにccxtコードを追記）
         # 取引所の売買およびccxtで成行注文（market_buyとsell）が実装されていないところがあるため、
-        # そういう場合は「askの1.01倍のbuy」および「bidの0.99倍のsell」を出すことで擬似的に成行注文を成立させています。
+        # そういう場合は「askの1.1倍のbuy」および「bidの0.9倍のsell」を出すことで擬似的に成行注文を成立させています。
         # 使っている取引所が対応している場合はこのリストに追加しておけばより動作が安定します。
         self.market_order = ["binance", "hitbtc2"]
         
         # amountの離散化サイズを粗いほうで上書き
-        # 取引の際、基本的にccxtが自動的に取引量の離散化を行うが、離散化サイズが二つの取引所で異なると管理がめんどくさいので、粗いほうで統一する
+        # 取引の際、ccxtで取引量の離散化を行う処理を行う。離散化サイズが二つの取引所で異なる場合、粗いほうで統一する
         try:
-            amount_precision = min(self.t1.markets[self.symbol]["precision"]["amount"], self.t2.markets[self.symbol]["precision"]["amount"])
-            self.t1.markets[self.symbol]["precision"]["amount"] = amount_precision
-            self.t2.markets[self.symbol]["precision"]["amount"] = amount_precision
+            self.amount_prec = min(self.t1.markets[self.symbol]["precision"]["amount"], self.t2.markets[self.symbol]["precision"]["amount"])
+            self.t1.markets[self.symbol]["precision"]["amount"] = self.amount_prec
+            self.t2.markets[self.symbol]["precision"]["amount"] = self.amount_prec
         except:
             print("Caution: amount precision is not defined")
         
@@ -127,17 +126,12 @@ class exchange(object):
     def minq(self, ts):
         try:
             minsize = ts.markets[self.symbol]["limits"]["amount"]["min"]
-        # 取得した取引所情報（ts.markets）が持ってなかったらccxt_extrainfo.py(ユーザーが書く)を参照
-        # buffer.pyに統合するかも
         except KeyError:
-            try:
-                minsize = ccxt_extrainfo.info().minqty()[ts.name][self.symbol]
-            except:
-                # minsizeが得られなかった場合、警告つきでいちおう動く（この場合、取引時に取引所からエラーが帰ってくる可能性あり）
-                # この警告が出たら手動での最小取引量の確認（&ccxt_extrainfo.pyに追記）を推奨
-                print("Caution: No information about minimum order quantity limit in " + ts.name)
-                print("→ check ccxt_extrainfo or currency pair")
-                minsize = 0
+            # minsizeが得られなかった場合、警告つきでいちおう動く（この場合、取引時に取引所から最小取引量に関するエラーが帰ってくる可能性あり）
+            # この警告が出たら手動での最小取引量の確認（&buffer.pyに追記）することを推奨
+            print("Caution: No information about minimum order quantity limit in " + ts.name)
+            print("→ check ccxt_extrainfo or currency pair")
+            minsize = 0
 
         return np.float(minsize)
     
@@ -358,6 +352,8 @@ class exchange(object):
             value = 0
 
         return chanceflag, value
+
+
     """
     板を監視して、指定した閾値以上での取引の可否と取引可能な量、そのときの通貨のask値を取得
     出力のtradeflagが1だったらt2で買ってt1で売る取引(order_up)
