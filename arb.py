@@ -184,9 +184,9 @@ try:
                 if trade_val >= ex.minsize:
                     
                     # 取引(詳細はtool.pyのorder_upを参照)
-                    # bid*0.9 と ask*1.1 は, market_orderができない取引所の場合に高いask, 安いbidの指値で
+                    # bid*0.99 と ask*1.01 は, market_orderができない取引所の場合に高いask, 安いbidの指値で
                     # 成行注文を行うためのもの
-                    ex.order_up(trade_val, chrate_up, int(t2_alt < t1_base/t1_ask), t1_bid*0.9, t2_ask*1.1)
+                    ex.order_up(trade_val, chrate_up, int(t2_alt < t1_base/t1_ask), t1_bid*0.99, t2_ask*1.01)
                     
                     # 取引したらreportflagをオン
                     reportflag = 1
@@ -195,7 +195,7 @@ try:
             if tradeflag == -1:
                 trade_val = min(val_down*0.8, tradable_value)
                 if trade_val >= ex.minsize:
-                    ex.order_down(trade_val, chrate_down, int(t1_alt < t2_base/t2_ask), t2_bid*0.9, t1_ask*1.1)
+                    ex.order_down(trade_val, chrate_down, int(t1_alt < t2_base/t2_ask), t2_bid*0.99, t1_ask*1.01)
                     reportflag = 1
 
             
